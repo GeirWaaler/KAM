@@ -31,10 +31,7 @@
 
 ## Waiting to be built
 
-- **AppDev** (Build it now, 2026-11-27) – a page for the admin: the data model and how the app is built (`docs/data-model.md`, `docs/app-structure.md`), and comments for the developer, saved as notes in the data folder and sent with *Send to Geir* (an email link to `dev_email` from settings, with a Copy fallback). Can be switched off in Settings (on by default).
-- **Onboarding tour** (Build it now, 2026-11-27) – like Horizons: on the demo data, a step per page with highlights, 4 chapters (finding your way; recording money; loans and the fund; reporting and year-end), offered on first open, restartable from About and Settings; a test checks the steps still point at real pages.
-- **Health check – Follow up** (waiting) – a list on Home: members behind target, fee unpaid, no email; overdue loans, interest due, requests waiting; last month's fund statement missing; data problems; meetings without minutes; unsent AppDev comments; year-end and handover reminder in December. A count on the Home tab; items disappear when fixed.
-- **Import the real workbook** (data model approved; waiting) – into a separate `KAM-data.zip` with an import report, as in `docs/data-model.md`.
+Nothing agreed is waiting.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
@@ -68,10 +65,17 @@ Defaults are used until answered.
 
 - **KAM 1.0** (2026-11-27): everything the workbook does – Home (group dashboard, 3 graphs, member table), Members (contacts, STT statements, committee, 2 graphs, member pages), Receipts (ledger, receipt summary, fund rows, cash at hand, monthly round), Fund & interest (interest split, workbook vs recalculated), Loans (EXP LOAN, plan, printable application), Projects (objectives, projects, tracker timeline), Meetings, Expenses, Plans, Year-end (dividend and share-out, cash count), Updates (email and WhatsApp), Settings (data folder, checks, handover zip), About (analysis, waiting list, what's new), demo data.
 
+- **KAM 1.1** (2026-11-27): AppDev (data model, app structure, comments, Send to Geir, switch in Settings), the Getting started tour (4 chapters on demo data), Follow up on Home, the import report; the real workbook imported into `KAM-data.zip` (sent in the chat, never committed).
+
 ## Status
 
 - 2026-11-27: workbook analysed (`docs/workbook-analysis.md`).
-- 2026-11-27: KAM 1.0 built and tested on made-up demo data. Data model written for approval (`docs/data-model.md`); the real workbook is not imported yet.
+- 2026-11-27: KAM 1.0 built and tested on made-up demo data. Data model approved (`docs/data-model.md`).
+- 2026-11-27: KAM 1.1 built; the workbook imported – every member's savings and membership, the fund's deposits and the loan outstanding match the workbook. The import report lists the points for the group to confirm.
+
+## Importing the workbook again
+
+`python3 tools/import_workbook.py <workbook.xlsx> <out>/KAM-data --dev-email <address>` then `node tools/report_import.mjs <out>/KAM-data`. Only in the cloud workspace; the output is never committed.
 
 ## How to build and test
 

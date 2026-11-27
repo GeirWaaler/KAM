@@ -12,10 +12,10 @@ const mName = c => { const m = memberByCode(c); return m ? m.name : c || "–"; 
 const mLink = c => `[[${c}${memberByCode(c) ? " " + memberByCode(c).name : ""}]]`;
 const pillFor = r => `<span class="tag ${r === "On Track" || r === "Saved" || r === "Above" || r === "repaid" ? "ok" : r === "Watch" || r === "Partial" || r === "Stable" || r === "active" ? "warn" : "bad"}">${esc(r)}</span>`;
 const TABS = [["home", "Home"], ["members", "Members"], ["receipts", "Receipts"], ["interest", "Fund & interest"], ["loans", "Loans"], ["projects", "Projects"],
-  ["meetings", "Meetings"], ["expenses", "Expenses"], ["plans", "Plans"], ["yearend", "Year-end"], ["updates", "Updates"], ["about", "About"], ["settings", "Settings"]];
+  ["meetings", "Meetings"], ["expenses", "Expenses"], ["plans", "Plans"], ["yearend", "Year-end"], ["updates", "Updates"], ["appdev", "AppDev"], ["about", "About"], ["settings", "Settings"]];
 const TAB_HELP = { home: "The group dashboard", members: "Members, contacts, statements and targets", receipts: "Every payment by member and month", interest: "The fund and how its interest is shared",
   loans: "Loans, repayments and the loan application", projects: "Objectives, projects and the project tracker", meetings: "Agenda, committee and meetings",
-  expenses: "Funding sources and expenses", plans: "The SACCO's plans", yearend: "Dividends, share-out and the cash count", updates: "Email and WhatsApp updates to the members",
+  expenses: "Funding sources and expenses", plans: "The SACCO's plans", yearend: "Dividends, share-out and the cash count", updates: "Email and WhatsApp updates to the members", appdev: "For the admin: the data model, how the app is built, and comments for the developer",
   about: "What KAM is, the workbook analysis and what is coming", settings: "Data folder, settings and the yearly handover" };
 
 function status(msg, kind = "ok") { const b = document.createElement("div"); b.className = `banner ${kind}`; b.innerHTML = msg; $("main").prepend(b); if (kind === "ok") setTimeout(() => b.remove(), 6000); }
@@ -42,7 +42,8 @@ function fillPeriod() {
 /* ---------------------------------------------------------------- shell */
 function renderTabs() {
   $("tabs").hidden = false;
-  $("tabs").innerHTML = TABS.map(([id, label]) => `<button data-tab="${id}" class="${view.tab === id || (view.tab === "member" && id === "members") ? "on" : ""}" title="${esc(TAB_HELP[id])}">${label}</button>`).join("");
+  const nf = followUps().length;
+  $("tabs").innerHTML = TABS.filter(([id]) => id !== "appdev" || appdevOn()).map(([id, label]) => `<button data-tab="${id}" class="${view.tab === id || (view.tab === "member" && id === "members") ? "on" : ""}" title="${esc(TAB_HELP[id])}">${label}${id === "home" && nf ? ` <span class="pill" title="Things to follow up">${nf}</span>` : ""}</button>`).join("");
 }
 function go(tab, extra = {}) { Object.assign(view, { tab }, extra); render(); window.scrollTo(0, 0); }
 function render() {
@@ -70,7 +71,7 @@ function pageHome() {
   const ya = yearActuals(db, years), qa = quarterActuals(db, view.year, repMonthKey());
   const fm = Array.from({ length: 12 }, (_, i) => { const f = db.fund.find(x => x.month === monthKey(view.year, i + 1) && !x.opening); return f ? f.interest : 0; });
   const projYears = [view.year - 1, view.year];
-  return `<h1>Dashboard · ${MONTHS_LONG[view.month - 1]} ${view.year}</h1>${checksBanner()}
+  return `<h1>Dashboard · ${MONTHS_LONG[view.month - 1]} ${view.year}</h1>${followUpSection()}
   <div class="kpis">
     ${kp("Registered members " + view.year, k.registered, "Active members who paid the membership fee this year")}
     ${kp("Total members", k.total, "Active members in the member list")}
@@ -377,7 +378,8 @@ function pageAbout() {
   return `<h1>About KAM</h1>
   <div class="card"><p><b>KAM ${APP.version}</b> · ${APP.date}</p>
   <p>KAM runs the SACCO's records: members, savings, the fund and its interest, loans, projects, meetings, expenses and the year-end. Every figure is calculated from the payments recorded – nothing is typed into a total.</p>
-  <p>The app is this one HTML file. The data is a separate folder of notes (Markdown files) – each year's admin receives both in the handover zip. The data never goes to GitHub.</p></div>
+  <p>The app is this one HTML file. The data is a separate folder of notes (Markdown files) – each year's admin receives both in the handover zip. The data never goes to GitHub.</p>
+  <div class="row noprint"><button class="primary" data-tour="1" title="A short guided tour of the pages, on made-up data">Start the tour</button></div></div>
   <h2>Waiting to be built</h2><div class="card md">${mdToHtml(APP.waiting)}</div>
   <h2>The workbook analysis</h2><div class="card md">${mdToHtml(APP.analysis)}</div>
   <h2>What's new</h2><div class="card md">${mdToHtml(APP.changes)}</div>`;
@@ -389,22 +391,26 @@ function pageSettings() {
   return `<h1>Settings</h1>
   <div class="card"><h2 style="margin-top:0">Data folder</h2><p>${store.demo ? "Demo data (in memory – nothing is saved)." : `Connected: <b>${esc(store.root ? store.root.name : "–")}</b> · ${store.notes.size} notes.`}</p>
   <div class="row"><button id="pickFolder" title="Choose the data folder to work in">Choose another data folder</button><button id="reload" title="Read the data folder again">Read again</button></div></div>
+  <div class="card"><h2 style="margin-top:0">Getting started</h2><p>A guided tour of the pages on made-up data – for a new admin.</p><div class="row"><button data-tour="1" title="Start the tour">Start the tour</button></div></div>
+  <div class="card"><h2 style="margin-top:0">AppDev</h2><p>The AppDev page explains the data model and how the app is built, and sends comments to the developer${devEmail() ? ` (${esc(devEmail())})` : ""}. It is <b>${appdevOn() ? "on" : "off"}</b>.</p>
+  ${s ? `<div class="row"><button id="appdevToggle" title="Show or hide the AppDev page">${appdevOn() ? "Switch AppDev off" : "Switch AppDev on"}</button></div>` : ""}</div>
   <div class="card"><h2 style="margin-top:0">Handover</h2><p>At the end of the year, download the handover zip and send it to the next admin. It holds the whole data folder, this app (KAM.html) and a summary to check that everything arrived.</p>
   <div class="row"><button class="primary" id="handover" title="Download the data folder, the app and a summary as one zip">Download handover zip</button></div></div>
-  <div class="card"><h2 style="margin-top:0">SACCO settings</h2>${s ? `<div class="form">${["sacco_name", "currency", "fund_name", "loan_rate", "loan_max_months", "default_fee", "registration_fee", "vision", "admin", "admin_year"].map(k => `<label>${esc(LABELS[k] || k)}</label><div>${esc(asText(s.props[k]))}</div>`).join("")}
+  <div class="card"><h2 style="margin-top:0">SACCO settings</h2>${s ? `<div class="form">${["sacco_name", "currency", "fund_name", "loan_rate", "loan_max_months", "default_fee", "registration_fee", "vision", "admin", "admin_year", "dev_email"].map(k => `<label>${esc(LABELS[k] || k)}</label><div>${esc(asText(s.props[k]))}</div>`).join("")}
     ${dataYears(db).concat(view.year + 1).filter((x, i, a) => a.indexOf(x) === i).map(y => `<label>Savings target ${y}</label><div>${money(s.props["target_" + y] || 0)}</div>`).join("")}</div>
     <div class="row"><button data-edit="${esc(s.path)}" title="Change the settings">Edit settings</button></div>` : `<p>This folder has no settings note yet.</p><button id="setup" class="primary" title="Create kam-settings.md and the folders">Set up this folder for KAM</button>`}</div>
+  ${notesOf("report").map(r => `<div class="card"><h2 style="margin-top:0">${esc(r.props.title || r.name)}</h2><details><summary title="Show the report">Show</summary><div class="md">${mdToHtml(r.body)}</div></details></div>`).join("")}
   <div class="card"><h2 style="margin-top:0">Checks (${cs.length})</h2>${cs.length ? `<ul>${cs.map(c => `<li class="${c.level === "err" ? "bad" : c.level === "warn" ? "warn" : "muted"}">${esc(c.text)}</li>`).join("")}</ul>` : "<p>All fine.</p>"}
   ${store.errors.length ? `<h3>Notes that could not be read</h3><ul>${store.errors.map(e => `<li><b>${esc(e.path)}</b>: ${esc(e.why)}</li>`).join("")}</ul>` : ""}</div>`;
 }
 const asText = v => Array.isArray(v) ? v.join(", ") : (v ?? "");
 
 const PAGES = { home: pageHome, members: pageMembers, member: pageMember, receipts: pageReceipts, interest: pageInterest, loans: pageLoans, projects: pageProjects, meetings: pageMeetings,
-  expenses: pageExpenses, plans: pagePlans, yearend: pageYearend, updates: pageUpdates, about: pageAbout, settings: pageSettings, apply: () => loanApplication(db.loans.find(l => l.code === view.loan)) };
+  expenses: pageExpenses, plans: pagePlans, yearend: pageYearend, updates: pageUpdates, appdev: () => appdevOn() ? pageAppdev() : pageHome(), about: pageAbout, settings: pageSettings, apply: () => loanApplication(db.loans.find(l => l.code === view.loan)) };
 
 /* ---------------------------------------------------------------- a small Markdown renderer (headings, lists, tables, bold, code, links) */
 function mdToHtml(md) {
-  const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a, b) => b || a)
+  const inline = s => esc(s).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>").replace(/(^|[\s(])\*([^*\s][^*]*)\*/g, "$1<i>$2</i>").replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a, b) => b || a)
     .replace(/\[([^\]]+)\]\((https?:[^)]+)\)/g, '<a href="$2" target="_blank" rel="noopener">$1</a>');
   const lines = String(md || "").replace(/<!--[\s\S]*?-->/g, "").split(/\r?\n/); let out = "", i = 0;
   while (i < lines.length) {

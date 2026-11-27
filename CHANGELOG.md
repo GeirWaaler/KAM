@@ -1,5 +1,13 @@
 # What's new
 
+### KAM 1.1 – AppDev, the tour and Follow up · 2026-11-27
+
+- **Follow up** on Home: what needs attention – members behind on savings, membership fees not paid, missing email addresses, overdue loans and unrecorded loan interest, a missing fund statement, data problems, meetings without minutes, unsent AppDev comments, and the year-end in December. The count shows on the Home tab; each item has a **fix** link.
+- **AppDev**: the data model and how KAM is built, and comments for the developer – saved in the data folder and sent with **Send to Geir**. Switch it off under Settings.
+- **Getting started tour**: a guided tour of the pages on made-up data, in four chapters. Offered when KAM opens for the first time; start it again from About or Settings.
+- **Import report** under Settings, when the data was imported from the workbook.
+- The handover zip now holds every file in the data folder (also the archived workbook).
+
 ### KAM 1.0 – everything the workbook does · 2026-11-27
 
 The first version of KAM: every number, calculation and graph of the group's workbook, now calculated from the payments recorded.

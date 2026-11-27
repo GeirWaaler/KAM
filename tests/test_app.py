@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, "dist")
 SHOTS = os.path.join(ROOT, "tests", "screenshots")
-TABS = ["home", "members", "receipts", "interest", "loans", "projects", "meetings", "expenses", "plans", "yearend", "updates", "about", "settings"]
+TABS = ["home", "members", "receipts", "interest", "loans", "projects", "meetings", "expenses", "plans", "yearend", "updates", "appdev", "about", "settings"]
 failures = []
 
 
@@ -47,6 +47,17 @@ COUNT = """async (folder) => { let d = await (await navigator.storage.getDirecto
 PICKER = "window.showDirectoryPicker = async () => (await navigator.storage.getDirectory()).getDirectoryHandle('data', { create: true });"
 
 
+def poll(pg, want, folder="transactions/2026"):
+    """The note count in a folder, waiting up to 5 s for it to reach `want`."""
+    n = None
+    for _ in range(50):
+        n = pg.evaluate(COUNT, folder)
+        if n == want:
+            break
+        pg.wait_for_timeout(100)
+    return n
+
+
 def main():
     shots = "--shots" in sys.argv
     os.makedirs(SHOTS, exist_ok=True)
@@ -76,7 +87,8 @@ def main():
         ctx = b.new_context(viewport={"width": 1280, "height": 900}, accept_downloads=True)
         pg = ctx.new_page()
         pg.goto(url + "#demo"); pg.wait_for_selector("#tabs button")
-        check("✓ Interest shares add up" in pg.inner_text("#main"), "home: interest check passes on demo data")
+        check("<h3>Data</h3>" not in pg.inner_html("#followup"), "home: no data problems in Follow up on the demo data")
+        pg.click('#tabs [data-tab="interest"]'); check("✓ Interest shares add up" in pg.inner_text("#main"), "interest check passes on demo data"); pg.click('#tabs [data-tab="home"]')
         check(pg.locator("svg.chart").count() == 3, "home: 3 charts (year, quarter, interest by month)")
         pg.click('#tabs [data-tab="members"]'); check(pg.locator("svg.chart").count() == 2, "members: 2 charts (contributions, savings vs targets)")
         pg.click('#tabs [data-tab="loans"]'); pg.click("[data-loan]"); check("Repayment plan" in pg.inner_text("#main"), "loan page shows the repayment plan")
@@ -85,6 +97,27 @@ def main():
         pg.click('#tabs [data-tab="about"]'); t = pg.inner_text("#main")
         check("Waiting to be built" in t and "Sheet by sheet" in t, "About shows the waiting list and the workbook analysis")
         pg.click('#tabs [data-tab="yearend"]'); pg.fill(".cc[data-d='50000']", "2"); check("100,000" in pg.inner_text("#cc50000"), "cash count adds up a banknote")
+        pg.click('#tabs [data-tab="home"]'); check(pg.locator("#followup").count() == 1 and "Follow up" in pg.inner_text("#followup"), "home: Follow up list")
+        check(pg.locator('#tabs [data-tab="home"] .pill').count() == 1, "home tab shows the follow-up count")
+        pg.locator("#followup [data-act]").first.click(); check(pg.inner_text("#main") != "", "a follow-up 'fix' link opens something")
+        # AppDev: comment, send link, switch off
+        pg.click('#tabs [data-tab="appdev"]'); t = pg.inner_text("#main")
+        check("The data model" in t and "How KAM is built" in t, "AppDev shows the data model and the app structure")
+        pg.fill("#devTitle", "Test idea"); pg.fill("#devText", "Some text"); pg.click("#devNew"); pg.wait_for_selector(".banner.ok")
+        check("2 not sent" in pg.inner_text("#main"), "AppDev: a new comment is saved, 2 not sent")
+        pg.click('#tabs [data-tab="settings"]'); pg.click("#appdevToggle"); pg.wait_for_selector(".banner.ok")
+        check(pg.locator('#tabs [data-tab="appdev"]').count() == 0, "AppDev can be switched off in Settings")
+        pg.click("#appdevToggle"); pg.wait_for_selector('#tabs [data-tab="appdev"]')
+        # the tour: every step points at something on its page
+        pg.click('#tabs [data-tab="about"]'); pg.click("[data-tour]"); pg.wait_for_selector("#tourPanel")
+        n = pg.evaluate("tourSteps().length"); missing = []
+        for i in range(n):
+            ok = pg.evaluate(f"(() => {{ tour.i = {i}; showTourStep(); const s = tourSteps()[{i}]; const tab = document.querySelector('#tabs [data-tab=\"' + s.tab + '\"]'); return !!(tab && document.querySelector(s.sel) && document.querySelector('.tourhl')); }})()")
+            if not ok: missing.append(i + 1)
+        check(not missing, f"tour: all {n} steps point at something on their page {missing}")
+        names = pg.evaluate("TABS.map(t => t[0])"); bad = pg.evaluate("TOUR.filter(s => !TABS.some(t => t[0] === s.tab)).length")
+        check(bad == 0, "tour: every step names a page in the menu")
+        pg.click("#tClose"); check(pg.locator("#tourPanel").count() == 0, "tour closes")
 
         # a real folder (OPFS): read, record a payment, monthly round, handover zip
         files = {}
@@ -99,10 +132,10 @@ def main():
         pg.click('#tabs [data-tab="receipts"]'); pg.click("[data-pay]")
         pg.select_option("#f_member", index=1); pg.fill("#f_amount", "130000"); pg.fill("#f_date", "2026-11-01"); pg.click("#edSave")
         pg.wait_for_selector(".banner.ok")
-        check(pg.evaluate(COUNT, "transactions/2026") == before + 1, "recording a payment writes one note")
+        after = poll(pg, before + 1); check(after == before + 1, f"recording a payment writes one note ({before} → {after})")
         pg.click("[data-round]"); pg.fill("#roundMonth", "2026-11"); pg.dispatch_event("#roundMonth", "change"); pg.wait_for_timeout(100)
         ins = pg.locator(".rin[data-k='savings']"); ins.nth(1).fill("50000"); ins.nth(2).fill("60000"); pg.click("#roundSave"); pg.wait_for_selector(".banner.ok")
-        check(pg.evaluate(COUNT, "transactions/2026") == before + 3, "the monthly round writes one note per amount")
+        check(poll(pg, before + 3) == before + 3, "the monthly round writes one note per amount")
         pg.click('#tabs [data-tab="settings"]')
         with pg.expect_download() as dl:
             pg.click("#handover")

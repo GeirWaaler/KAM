@@ -95,7 +95,7 @@ const store = { root: null, demo: false, notes: new Map(), errors: [], writing: 
 const FOLDER = {
   settings: "", member: "members", transaction: "transactions/{year}", loan: "loans", fund: "fund", objective: "objectives",
   project: "projects", task: "projects/tasks", meeting: "meetings/{year}", plan: "plans", funding: "expenses", year: "years",
-  cashcount: "cash counts", update: "updates/{year}",
+  cashcount: "cash counts", update: "updates/{year}", devnote: "appdev/{year}",
 };
 const TYPES = Object.keys(FOLDER);
 
@@ -177,7 +177,7 @@ function baseNameFor(type, p) {
     case "transaction": return `${p.date} ${p.member || "group"} ${p.kind}`;
     case "loan": return `${p.code || ""} ${p.member || ""}`.trim();
     case "fund": return `${p.month} ${p.title || "fund statement"}`;
-    case "meeting": case "update": case "cashcount": return `${p.date || p.month || todayISO()} ${p.title || type}`;
+    case "meeting": case "update": case "cashcount": case "devnote": return `${p.date || p.month || todayISO()} ${p.title || type}`;
     default: return `${p.code ? p.code + " " : ""}${p.title || type}`;
   }
 }

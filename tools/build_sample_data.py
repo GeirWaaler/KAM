@@ -65,7 +65,7 @@ def main():
         "agenda": ["Opening prayer | Selected member", "Welcome note and introduction | Chairperson", "Review of previous minutes | Secretary",
                    "Review of financial position | Treasurer", "Any other SACCO business | Chairperson", "AOB | Round table", "Closing prayer | Selected member"],
         "banknotes": [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100],
-        "admin": "K001", "admin_year": 2026,
+        "admin": "K001", "admin_year": 2026, "appdev": "on", "dev_email": "developer@example.com",
     }, "Demo data – every name and amount here is invented.")
 
     for code, name, country, city, tz, target, role in MEMBERS:
@@ -161,6 +161,8 @@ def main():
     note("expenses/Funding 2026-02 Membership fees.md", {"type": "funding", "title": "Membership fees", "approved": "2026-02-13", "amount": 450000})
     note("transactions/2026/2026-03-01 group expense.md", {"type": "transaction", "date": "2026-03-01", "kind": "expense", "amount": 120000, "project": "[[A260201 Register the SACCO]]", "reference": "Registration fee", "source": "demo"})
     note("cash counts/2026-10-10 Cash count.md", {"type": "cashcount", "date": "2026-10-10", "title": "Cash count", "n50000": 4, "n20000": 3, "n10000": 5, "n5000": 2, "n1000": 7})
+    note("appdev/2026/2026-11-20 Remember the last month in the monthly round.md", {"type": "devnote", "date": "2026-11-20", "title": "Remember the last month in the monthly round", "kind": "Idea", "page": "Receipts", "status": "new"},
+         "When I open the monthly round it should start on the month after the last one I entered.")
     print("demo data:", sum(len(f) for _, _, f in os.walk(OUT)), "notes in", OUT)
 
 

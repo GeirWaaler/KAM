@@ -17,7 +17,7 @@ Builder: Geir (not a member of the group). The group's contact: Arnold. Each yea
 
 ## Code
 
-- `app/src/` – `store.js` (data folder, notes, zip), `calc.js` (all calculations, pure – tested in node), `charts.js` (SVG charts), `views.js` (pages), `main.js` (editor, events, start), `shell.html` (layout and CSS). `build.py` concatenates them into `dist/KAM.html` with the demo data, About texts and changelog.
+- `app/src/` – `store.js` (data folder, notes, zip), `calc.js` (all calculations, pure – tested in node), `charts.js` (SVG charts), `views.js` (pages), `extras.js` (AppDev, Follow up, the tour – `TOUR`; keep the steps pointing at real pages, the test checks it), `main.js` (editor, events, start), `shell.html` (layout and CSS). `build.py` concatenates them into `dist/KAM.html` with the demo data, About texts and changelog.
 - No external libraries – the app must work offline from one file.
 - Every figure is calculated from transactions, fund notes and loans; never store a total.
 - Tests: `node tests/test_calc.mjs` and `python3 tests/test_app.py --shots`, both `ALL PASSED` before committing.

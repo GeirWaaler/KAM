@@ -14,14 +14,15 @@ const FIELDS = {
   task: [["title", "text"], ["project", "project"], ["phase", "text"], ["owner", "member"], ["progress", "number"], ["start", "date"], ["end", "date"], ["order", "number"]],
   meeting: [["date", "date"], ["title", "text"], ["attendees", "list"]],
   plan: [["title", "text"]], funding: [["title", "text"], ["approved", "date"], ["amount", "number"]],
+  devnote: [["date", "date"], ["title", "text"], ["kind", DEV_KINDS], ["page", "text"], ["status", DEV_STATUS], ["sent", "date"]],
   year: [["year", "number"], ["pool", "number"], ["decided", "date"]], cashcount: [["date", "date"], ["title", "text"]], update: [["date", "date"], ["title", "text"]],
   settings: [["sacco_name", "text"], ["currency", "text"], ["fund_name", "text"], ["loan_rate", "number"], ["loan_max_months", "number"], ["default_fee", "number"], ["registration_fee", "number"],
-    ["vision", "text"], ["highlights", "list"], ["agenda", "list"], ["banknotes", "list"], ["admin", "text"], ["admin_year", "number"]],
+    ["vision", "text"], ["highlights", "list"], ["agenda", "list"], ["banknotes", "list"], ["admin", "text"], ["admin_year", "number"], ["appdev", ["on", "off"]], ["dev_email", "text"]],
 };
 const LABELS = { title: "Name / title", sacco_name: "SACCO name", fund_name: "Fund name", loan_rate: "Loan interest per month (0.05 = 5%)", loan_max_months: "Longest repayment (months)", default_fee: "Default fee",
   registration_fee: "Registration fee", monthly_target: "Monthly savings target", annual_target: "Annual savings target", workbook_interest_2025: "Interest the workbook showed, 2025", workbook_interest_2026: "Interest the workbook showed, 2026",
-  paid_out: "Paid out", admin: "This year's admin (code)", admin_year: "Admin year", highlights: "Last month's highlights (one per line)", agenda: "Standing agenda (item | responsible, one per line)", banknotes: "Banknotes for the cash count", attendees: "Attendees (one per line)" };
-const BODY_LABEL = { meeting: "Minutes and decisions", plan: "The plan", loan: "Notes", member: "Notes", project: "Notes", settings: "Notes" };
+  paid_out: "Paid out", admin: "This year's admin (code)", admin_year: "Admin year", highlights: "Last month's highlights (one per line)", agenda: "Standing agenda (item | responsible, one per line)", banknotes: "Banknotes for the cash count", attendees: "Attendees (one per line)", appdev: "AppDev page", dev_email: "Developer's email (AppDev)", page: "About the page" };
+const BODY_LABEL = { devnote: "Comment", meeting: "Minutes and decisions", plan: "The plan", loan: "Notes", member: "Notes", project: "Notes", settings: "Notes" };
 
 /* ---------------------------------------------------------------- the editor */
 function fieldInput(key, kind, value) {
@@ -92,6 +93,26 @@ function wire() {
   const on = (sel, fn) => document.querySelectorAll(sel).forEach(el => el.addEventListener("click", e => { e.preventDefault(); fn(el); }));
   on("#tabs [data-tab]", el => go(el.dataset.tab, { loan: "", receiptsKind: "all" }));
   on("[data-go]", el => go(el.dataset.go));
+  on("[data-tour]", () => guarded(startTour));
+  on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("member", { member: v }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
+  if ($("appdevToggle")) $("appdevToggle").onclick = () => guarded(async () => { await saveNote(settingsNote(), { appdev: appdevOn() ? "off" : "on" }); refreshDb(); render(); status(`AppDev is ${appdevOn() ? "on" : "off"}.`); });
+  if ($("devNew")) $("devNew").onclick = () => guarded(async () => {
+    const title = $("devTitle").value.trim(), text = $("devText").value.trim();
+    if (!title && !text) throw new Error("Write a subject or a comment first.");
+    await createNote("devnote", { date: todayISO(), title: title || text.slice(0, 60), kind: $("devKind").value, page: $("devPage").value, status: "new" }, text);
+    refreshDb(); render(); status("Comment saved. Send it with <b>Send to Geir</b> when you're ready.");
+  });
+  const unsentDev = () => devnotes().filter(d => (d.status || "new") === "new");
+  if ($("devSend")) $("devSend").onclick = () => {
+    const list = unsentDev(); if (!list.length) return;
+    if (!devEmail()) { status("Add the developer's email under Settings › Edit settings first.", "err"); return; }
+    let body = devMailText(list); if (body.length > 1800) body = body.slice(0, 1700) + "\n\n[Too long for an email link – the full text is copied; paste it here.]";
+    if (body.includes("[Too long")) navigator.clipboard && navigator.clipboard.writeText(devMailText(list)).catch(() => {});
+    location.href = `mailto:${encodeURIComponent(devEmail())}?subject=${encodeURIComponent(`KAM AppDev – ${list.length} comment${list.length > 1 ? "s" : ""}`)}&body=${encodeURIComponent(body)}`;
+    $("devAfter").innerHTML = `<div class="banner warn">Did the email go? <button class="primary" id="devMark" title="Mark these comments as sent">Yes – mark ${list.length} as sent</button></div>`;
+    $("devMark").onclick = () => guarded(async () => { for (const d of list) await saveNote(d.note, { status: "sent", sent: todayISO() }); refreshDb(); render(); status("Marked as sent."); });
+  };
+  if ($("devCopy")) $("devCopy").onclick = () => guarded(async () => { await navigator.clipboard.writeText(devMailText(unsentDev())); status("Copied – paste into an email to the developer."); });
   on("[data-member]", el => go("member", { member: el.dataset.member }));
   on("[data-edit]", el => { const n = findNote(el.dataset.edit); if (n) openEditor(n.type, n); });
   on("[data-new]", el => newOf(el.dataset.new));
@@ -183,16 +204,19 @@ function welcome(h) {
   $("main").innerHTML = `<div class="welcome"><div class="card"><h1>Welcome to KAM</h1>
   <p>KAM keeps the SACCO's records in a <b>data folder</b> on this computer. The folder usually comes from last year's admin, in the handover zip – unzip it first.</p>
   <div class="row">${h ? `<button class="primary" id="wReconnect" title="Give KAM access to ${esc(h.name)} again">Reconnect ${esc(h.name)}</button>` : ""}
-  <button class="${h ? "" : "primary"}" id="wPick" title="Choose the data folder (or an empty folder to start a new one)">Open the data folder</button><button id="wDemo" title="Look around with made-up data – nothing is saved">Try the demo</button></div>
+  <button class="primary" id="wTour" title="A short guided tour on made-up data">Take the tour</button>
+  <button id="wPick" title="Choose the data folder (or an empty folder to start a new one)">Open the data folder</button><button id="wDemo" title="Look around with made-up data – nothing is saved">Try the demo</button></div>
   <p class="muted small">Works in Chrome or Edge on a computer. The data stays on this computer – KAM sends nothing anywhere.</p></div></div>`;
-  $("wPick").onclick = pickFolder; $("wDemo").onclick = () => guarded(startDemo);
+  $("wPick").onclick = pickFolder; $("wTour").onclick = () => guarded(startTour); $("wDemo").onclick = () => guarded(startDemo);
   if (h) $("wReconnect").onclick = () => guarded(() => useFolder(h, true));
 }
 
 /* ---------------------------------------------------------------- the handover zip */
 async function handover() {
   const enc = new TextEncoder(), files = [], end = repMonthKey(), k = kpis(db, alloc, view.year, view.month);
-  for (const n of [...store.notes.values()].sort((a, b) => a.path.localeCompare(b.path))) { const f = await n.handle.getFile(); files.push({ name: `KAM-data/${n.path}`, data: new Uint8Array(await f.arrayBuffer()) }); }
+  const addDir = async (dir, path) => { for await (const [name, h] of dir.entries()) { if (name.startsWith(".")) continue; const p = path ? `${path}/${name}` : name;
+    if (h.kind === "directory") await addDir(h, p); else files.push({ name: `KAM-data/${p}`, data: new Uint8Array(await (await h.getFile()).arrayBuffer()) }); } };
+  await addDir(store.root, "");   /* every file in the folder – notes, the archive, anything else kept there */
   const lines = [`KAM handover – ${db.settings.sacco_name || ""}`, `Made ${nowISO()} by the ${db.settings.admin_year || view.year} admin (${db.settings.admin || "–"})`, `Figures as at the end of ${end}`, "",
     `Notes in the data folder: ${store.notes.size}`, `Total saved: ${money(k.totalSaved)}`, `Fund value: ${money(k.fundValue)}`, `Interest shared to date: ${money(k.shared)}`, "", "Member            Savings      Fund balance   Loan outstanding"];
   let check = 0;

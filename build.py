@@ -16,9 +16,9 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.0"
+VERSION = "1.1"
 VERSION_DATE = "2026-11-27"
-PARTS = ["store.js", "calc.js", "charts.js", "views.js", "main.js"]
+PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "main.js"]
 
 
 def read(*p):
@@ -49,6 +49,8 @@ def main():
         "version": VERSION, "date": VERSION_DATE, "demo": demo_files(),
         "waiting": section(read("docs", "working-with-claude.md"), "Waiting to be built"),
         "analysis": analysis,
+        "datamodel": re.sub(r"^# [^\n]*\n", "", read("docs", "data-model.md"), count=1).strip(),
+        "structure": re.sub(r"^# [^\n]*\n", "", read("docs", "app-structure.md"), count=1).strip(),
         "changes": re.sub(r"^# [^\n]*\n", "", read("CHANGELOG.md"), count=1).strip(),
     }
     js = "const APP = " + json.dumps(app, ensure_ascii=False) + ";\n" + "\n".join(read("app", "src", p) for p in PARTS)
