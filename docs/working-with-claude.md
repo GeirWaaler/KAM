@@ -29,25 +29,7 @@
 
 ## Waiting to be built
 
-**Version 1 – everything the workbook does** (agreed 2026-11-27, waiting)
-
-1. Data folder connection and demo data (made up). The real workbook is imported into a separate data zip only after Geir has approved the data model.
-2. Receipts: all 6 payment kinds per member and month (savings, membership, welfare, penalties, loan interest, loan repayment), group totals, cash at hand, UAP fund deposits, interest and running total.
-3. Interest earned per member – the workbook's figure and the recalculated figure side by side, with the difference.
-4. STT member statement.
-5. EXP LOAN: borrowing, repayment and outstanding per member and period.
-6. Loan Application form, printable, with the 5% per month and 4-month rules.
-7. Group Dashboard: KPIs, objectives OB001–OB005, projects and activities table, actual vs target by year and quarter, member table with monthly target, gap, consistency, momentum and risk flag.
-8. Individuals Dashboard: member picker, contacts and time zones.
-9. All 5 graphs: actual vs target by year; savings vs target by quarter; interest earned by month; total contributions per member; monthly savings and targets per member.
-10. Expenses with funding sources and running balance.
-11. Monthly Meeting agenda and committee.
-12. Project Tracker with a timeline (Gantt).
-13. Investment, Tech, Treasury, Database, Welfare and Secretary plans as notes.
-14. The 2021 dividend calculation and share-out list, as a year-end dividend tool.
-15. The cash count by banknote.
-16. Email and WhatsApp update, and the handover zip.
-17. About: shows the workbook analysis and this waiting list, copied in by the build from `docs/` (so the app and the docs never disagree).
+- **Import the real workbook** into a separate data zip – waits for Geir's approval of `docs/data-model.md`.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
@@ -74,6 +56,17 @@ Defaults are used until answered.
 | Which email address does each member use? | Empty fields to fill in |
 | Does row "UAP Interest" hold only interest? It implies about 4% per month in 2026. | Used as entered |
 
+## Built
+
+- **KAM 1.0** (2026-11-27): everything the workbook does – Home (group dashboard, 3 graphs, member table), Members (contacts, STT statements, committee, 2 graphs, member pages), Receipts (ledger, receipt summary, fund rows, cash at hand, monthly round), Fund & interest (interest split, workbook vs recalculated), Loans (EXP LOAN, plan, printable application), Projects (objectives, projects, tracker timeline), Meetings, Expenses, Plans, Year-end (dividend and share-out, cash count), Updates (email and WhatsApp), Settings (data folder, checks, handover zip), About (analysis, waiting list, what's new), demo data.
+
 ## Status
 
-- 2026-11-27: workbook analysed (`docs/workbook-analysis.md`); version 1 agreed and waiting. No app code yet.
+- 2026-11-27: workbook analysed (`docs/workbook-analysis.md`).
+- 2026-11-27: KAM 1.0 built and tested on made-up demo data. Data model written for approval (`docs/data-model.md`); the real workbook is not imported yet.
+
+## How to build and test
+
+- `python3 build.py` → `dist/KAM.html` (never edit `dist/` by hand).
+- `node tests/test_calc.mjs` and `python3 tests/test_app.py --shots` – both must print `ALL PASSED`; look at the screenshots after visual changes.
+- Version: `VERSION`/`VERSION_DATE` in `build.py`, plus an entry in `CHANGELOG.md`.

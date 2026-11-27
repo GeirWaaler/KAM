@@ -4,3 +4,6 @@
 *.zip
 KAM-data*/
 real-data/
+dist/KAM demo data/
+tests/screenshots/
+__pycache__/

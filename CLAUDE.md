@@ -14,3 +14,10 @@ Builder: Geir (not a member of the group). The group's contact: Arnold. Each yea
 - Work on a branch and open a pull request unless Geir asks to commit straight to `main`.
 - Code borrowed from Horizons (GeirWaaler/CRM-Horizons) is copied into this repo; nothing about KAM is ever written to the Horizons repo.
 - App language: English. Users are not developers – explain changes in plain language.
+
+## Code
+
+- `app/src/` – `store.js` (data folder, notes, zip), `calc.js` (all calculations, pure – tested in node), `charts.js` (SVG charts), `views.js` (pages), `main.js` (editor, events, start), `shell.html` (layout and CSS). `build.py` concatenates them into `dist/KAM.html` with the demo data, About texts and changelog.
+- No external libraries – the app must work offline from one file.
+- Every figure is calculated from transactions, fund notes and loans; never store a total.
+- Tests: `node tests/test_calc.mjs` and `python3 tests/test_app.py --shots`, both `ALL PASSED` before committing.
