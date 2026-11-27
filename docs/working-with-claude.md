@@ -26,10 +26,15 @@
 | 2026-11-27 | Code goes in through a branch and pull request. |
 | 2026-11-27 | The first build must contain every functionality in the workbook – all numbers, calculations and graphs – before anything new. |
 | 2026-11-27 | The real workbook is imported only once the data model is settled: the data model is written up first (`docs/data-model.md`) and Geir approves it before any import. |
+| 2026-11-27 | Data model approved after a part-by-part walk-through. Payments: one currency, no method; welfare payouts are expenses. |
+| 2026-11-27 | Geir's email address is not written in the repo; it lives in the data folder's settings (`dev_email`). |
 
 ## Waiting to be built
 
-- **Import the real workbook** into a separate data zip – waits for Geir's approval of `docs/data-model.md`.
+- **AppDev** (Build it now, 2026-11-27) – a page for the admin: the data model and how the app is built (`docs/data-model.md`, `docs/app-structure.md`), and comments for the developer, saved as notes in the data folder and sent with *Send to Geir* (an email link to `dev_email` from settings, with a Copy fallback). Can be switched off in Settings (on by default).
+- **Onboarding tour** (Build it now, 2026-11-27) – like Horizons: on the demo data, a step per page with highlights, 4 chapters (finding your way; recording money; loans and the fund; reporting and year-end), offered on first open, restartable from About and Settings; a test checks the steps still point at real pages.
+- **Health check – Follow up** (waiting) – a list on Home: members behind target, fee unpaid, no email; overdue loans, interest due, requests waiting; last month's fund statement missing; data problems; meetings without minutes; unsent AppDev comments; year-end and handover reminder in December. A count on the Home tab; items disappear when fixed.
+- **Import the real workbook** (data model approved; waiting) – into a separate `KAM-data.zip` with an import report, as in `docs/data-model.md`.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
@@ -55,6 +60,9 @@ Defaults are used until answered.
 | Are K014 and K015 (contact list only) members? | Imported as "prospective" |
 | Which email address does each member use? | Empty fields to fill in |
 | Does row "UAP Interest" hold only interest? It implies about 4% per month in 2026. | Used as entered |
+| The 2026 savings target on the dashboard and in objective OB002 differ by a factor of ten – which is right? | The dashboard figure |
+| The secretary in the committee list doesn't match a member name – who is it? | Role left off; listed in the import report |
+| The 2024 and 2025 actuals on the dashboard are typed; the app calculates them from the payments | Calculated figures shown |
 
 ## Built
 

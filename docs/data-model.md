@@ -1,6 +1,8 @@
 # Data model – for approval
 
-**Status: proposal, waiting for Geir's approval.** The real workbook is imported only after this is approved. The demo data (`tools/build_sample_data.py`) already follows it.
+**Status: approved by Geir, 2026-11-27** (walked through part by part). The demo data (`tools/build_sample_data.py`) follows it.
+
+Decisions in the walk-through: no payment method or receiver on payments; amounts in the SACCO's currency only (no foreign-currency fields); money paid out to members from welfare is recorded as an expense on a project; the Project Tracker's sample tasks and the old hidden sheets are not imported.
 
 The data folder holds Markdown notes with YAML properties. The app finds notes by `type`, never by folder, so notes can be moved. Amounts are whole shillings; dates `YYYY-MM-DD`; months `YYYY-MM`. Links to other notes are Obsidian links (`[[K004 Name]]`). Properties the app doesn't know are kept when it saves.
 
@@ -55,6 +57,13 @@ KAM-data/
 | Expenses | funding notes and expense transactions |
 | Investment / Tech / other plans | plan notes (text as written) |
 | Hidden 2021 sheets | Not imported; the workbook stays in the archive as it is |
+
+## The import
+
+- Runs in the cloud workspace only, reading the workbook; the result is `KAM-data.zip`, sent in the chat – never committed to GitHub.
+- `Import report.md` in the data folder: notes made per kind; totals checked against the workbook (savings per member and in total, membership, loans outstanding, fund deposits and interest per year) – each matches or shows the difference and why; points for the admin to confirm.
+- The original workbook goes into `archive/` inside the zip, unchanged.
+- Meetings: the workbook holds only the standing agenda, the committee and the next meeting date – no minutes.
 
 ## Open points that could change the model
 
