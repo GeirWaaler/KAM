@@ -25,12 +25,13 @@
 | 2026-11-27 | Interest split, until the group decides: each month's fund interest shared by each member's balance at the start of the month, earlier interest included. The workbook's own figure is shown alongside. |
 | 2026-11-27 | Code goes in through a branch and pull request. |
 | 2026-11-27 | The first build must contain every functionality in the workbook – all numbers, calculations and graphs – before anything new. |
+| 2026-11-27 | The real workbook is imported only once the data model is settled: the data model is written up first (`docs/data-model.md`) and Geir approves it before any import. |
 
 ## Waiting to be built
 
 **Version 1 – everything the workbook does** (agreed 2026-11-27, waiting)
 
-1. Data folder connection, demo data (made up), and the real workbook imported into a separate data zip.
+1. Data folder connection and demo data (made up). The real workbook is imported into a separate data zip only after Geir has approved the data model.
 2. Receipts: all 6 payment kinds per member and month (savings, membership, welfare, penalties, loan interest, loan repayment), group totals, cash at hand, UAP fund deposits, interest and running total.
 3. Interest earned per member – the workbook's figure and the recalculated figure side by side, with the difference.
 4. STT member statement.
