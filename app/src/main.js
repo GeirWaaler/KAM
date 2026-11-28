@@ -202,7 +202,7 @@ async function startDemo() {
 }
 function welcome(h) {
   $("tabs").hidden = true; $("frame").classList.add("nomenu"); $("period").hidden = true;
-  $("main").innerHTML = `<div class="welcome"><div class="card"><h1>Welcome to KAM</h1>
+  $("main").innerHTML = `<div class="welcome"><div class="card"><div class="brand">${document.querySelector("header .brand svg").outerHTML}<span>KAM</span></div><h1>Welcome to KAM</h1>
   <p>KAM keeps the SACCO's records in a <b>data folder</b> on this computer. The folder usually comes from last year's admin, in the handover zip – unzip it first.</p>
   <div class="row">${h ? `<button class="primary" id="wReconnect" title="Give KAM access to ${esc(h.name)} again">Reconnect ${esc(h.name)}</button>` : ""}
   <button class="primary" id="wTour" title="A short guided tour on made-up data">Take the tour</button>

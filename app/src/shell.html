@@ -4,15 +4,18 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KAM</title>
+<link rel="icon" type="image/svg+xml" href="/*__FAVICON__*/">
 <style>
 :root { --bg:#f7f6f2; --card:#fff; --ink:#1f2328; --muted:#5f6670; --line:#e2e0d8; --accent:#1f6f50; --accent-ink:#fff; --soft:#e8f2ed;
   --c1:#1f6f50; --c2:#d08a1d; --c3:#3a6ea5; --c4:#8a5cb5; --ok:#1f6f50; --warn:#b7791f; --bad:#c0392b; --hl:#fff6dd; }
 @media (prefers-color-scheme: dark) { :root { --bg:#16181b; --card:#1f2226; --ink:#e8e6e1; --muted:#a3a8ae; --line:#33373d; --accent:#5fbf92; --accent-ink:#0d1f17; --soft:#1d2e26;
   --c1:#5fbf92; --c2:#e8a94a; --c3:#7aa7d9; --c4:#b394d6; --ok:#5fbf92; --warn:#e8a94a; --bad:#ef7a6d; --hl:#3a3420; } }
 * { box-sizing: border-box; }
+[hidden] { display:none !important; } .pill:empty { display:none; }
 body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
 header { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-.logo { font-weight:800; letter-spacing:.06em; background:var(--accent); color:var(--accent-ink); border-radius:6px; padding:2px 8px; }
+.brand { display:inline-flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.06em; font-size:17px; } .brand svg { width:30px; height:30px; display:block; }
+.welcome .brand svg { width:64px; height:64px; } .welcome .brand { font-size:26px; gap:14px; margin-bottom:8px; }
 #sacco { font-weight:600; }
 #period { display:flex; gap:6px; align-items:center; margin-left:auto; }
 /* the left-hand menu (as in Horizons): icons, groups, narrow mode remembered per computer; a row on top on narrow screens */
@@ -97,7 +100,7 @@ svg.gantt { min-width:700px; }
 <body>
 <div id="demoBand" class="demo-band" hidden>Demo data – made-up members and amounts. Nothing is saved. <button class="lnk" id="leaveDemo" title="Go back to the start page">Leave the demo</button></div>
 <header>
-  <span class="logo" title="KAM">KAM</span><span id="sacco"></span>
+  <span class="brand" title="KAM">/*__LOGO__*/<span>KAM</span></span><span id="sacco"></span>
   <span id="folderChip" class="pill"></span>
   <div id="period" hidden>
     <label class="muted small" for="repYear">Reporting month</label>

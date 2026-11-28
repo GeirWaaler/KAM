@@ -13,10 +13,11 @@ import re
 import subprocess
 import sys
 import tempfile
+import urllib.parse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.2.1"
+VERSION = "1.3"
 VERSION_DATE = "2026-11-28"
 PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "main.js"]
 
@@ -55,7 +56,9 @@ def main():
     }
     js = "const APP = " + json.dumps(app, ensure_ascii=False) + ";\n" + "\n".join(read("app", "src", p) for p in PARTS)
     js = js.replace("</script", "<\\/script")
-    html = read("app", "src", "shell.html").replace("/*__JS__*/", js)
+    logo = read("app", "src", "logo.svg").strip()
+    favicon = "data:image/svg+xml," + urllib.parse.quote(logo, safe=" =:/,;#")
+    html = read("app", "src", "shell.html").replace("/*__FAVICON__*/", favicon).replace("/*__LOGO__*/", logo).replace("/*__JS__*/", js)
     os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
     with open(os.path.join(ROOT, "dist", "KAM.html"), "w", encoding="utf-8") as f:
         f.write(html)

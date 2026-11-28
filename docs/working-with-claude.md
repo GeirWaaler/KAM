@@ -67,6 +67,7 @@ Defaults are used until answered.
 
 - **KAM 1.1** (2026-11-27): AppDev (data model, app structure, comments, Send to Geir, switch in Settings), the Getting started tour (4 chapters on demo data), Follow up on Home, the import report; the real workbook imported into `KAM-data.zip` (sent in the chat, never committed).
 - **KAM 1.2** (2026-11-28): the menu on the left with an icon per page, grouped (Money, Group, Reporting, Housekeeping), Narrow/Wide menu remembered per computer, a row on top on phones.
+- **KAM 1.3** (2026-11-28): the logo and favicon – rising coin stacks with an upward arrow in the Ugandan flag colours (`app/src/logo.svg`).
 
 ## Status
 

@@ -1,5 +1,10 @@
 # What's new
 
+### KAM 1.3 – a logo · 2026-11-28
+
+- The welcome page no longer shows empty month and year boxes.
+- **KAM has a logo** – coin stacks rising with an upward arrow, in the colours of the Ugandan flag (black, yellow, red). It shows in the browser tab, in the top left of the app and on the welcome page.
+
 ### KAM 1.2.1 – the menu scrolls with the page · 2026-11-28
 
 - **The menu has no scrollbar of its own any more.** As in Horizons, it is a panel as tall as its items and stays in place while the page scrolls. In a short window it moves up with the page until its last item is in view, then stays there.

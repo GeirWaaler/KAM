@@ -91,6 +91,7 @@ def main():
         pg.goto(url + "#demo"); pg.wait_for_selector("#tabs button")
         box = pg.locator("#tabs").bounding_box(); check(box["height"] > 600 and box["width"] < 220, "the menu is a column on the left")
         check(pg.locator("#tabs svg.ni").count() >= 14, "every menu item has an icon")
+        check(pg.evaluate("document.querySelector('link[rel=icon]').href.startsWith('data:image/svg+xml')") and pg.locator("header .brand svg").count() == 1, "the logo is the favicon and sits in the header")
         check(pg.evaluate("(() => { const n = document.getElementById('tabs'); return getComputedStyle(n).overflowY !== 'auto' && n.scrollHeight <= n.clientHeight + 1; })()"), "the menu has no scrollbar of its own")
         pg.set_viewport_size({"width": 1280, "height": 560}); pg.mouse.wheel(0, 5000); pg.wait_for_timeout(200)
         last = pg.locator("#navToggle").bounding_box(); check(last["y"] + last["height"] <= 560, "in a short window the last menu item can be reached by scrolling the page")
