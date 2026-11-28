@@ -32,7 +32,7 @@
 
 ## Waiting to be built
 
-Nothing agreed is waiting.
+- **Top bar as in Horizons** (agreed 2026-11-28, waiting) – so Arnold recognises it coming from Horizons: the version and date in small grey under the logo (v1.4 · date); the SACCO name next to it; on the right the reporting month, then the data folder chip (folder name · notes · read at time; click to choose another folder) and a ⟳ button to read the folder again. The demo shows in the chip (Demo data · notes · nothing is saved · Leave the demo) instead of the yellow band. Settings keeps its Data folder card; tour and help updated.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
