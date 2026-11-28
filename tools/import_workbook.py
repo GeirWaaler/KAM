@@ -159,7 +159,7 @@ def main():
 
     mlink = {}
     for m in members:
-        note_name = o.note("members", f"{m['code']} {m['title']}", {"type": "member", "code": m["code"], "title": m["title"], "status": m["status"], "joined": "",
+        note_name = o.note("members", f"{m['code']} {m['title']}", {"type": "member", "code": m["code"], "title": m["title"], "short_name": m["title"].split()[0], "status": m["status"], "joined": "",
             "role": m.get("role", ""), "country": m["country"], "city": m["city"], "timezone": m["timezone"], "email": m["email"], "phone": "",
             "monthly_target": round(m["monthly_target"]), "annual_target": round(m["annual_target"]),
             **({"workbook_interest_2025": m["workbook_interest_2025"], "workbook_interest_2026": m["workbook_interest_2026"]} if "workbook_interest_2025" in m else {})})
@@ -293,7 +293,7 @@ def main():
     title = str(wb["Loan Application"].cell(1, 2).value or "").strip().title().replace("Sacco", "SACCO")
     o.note("", "kam-settings", {"type": "settings", "title": "KAM settings", "sacco_name": title, "currency": "UGX", "fund_name": "UAP", "interest_rule": "start-of-month balance",
         "loan_rate": 0.05, "loan_max_months": 4, "default_fee": "", "registration_fee": 50000, **targets, "vision": "", "highlights": highlights, "agenda": agenda,
-        "banknotes": [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100], "admin": a.admin, "admin_year": dt.date.today().year, "appdev": "on", "dev_email": a.dev_email},
+        "banknotes": [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100], "admin": a.admin, "admin_year": dt.date.today().year, "appdev": "on", "dev_email": a.dev_email, "amount_display": "numbers", "structure_version": 2},
         "Imported from the workbook. The default fee for loans is not in the workbook – add it if the group uses one.")
 
     # ---------------------------------------------------------------- the original workbook, unchanged

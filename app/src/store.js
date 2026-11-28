@@ -89,13 +89,16 @@ class MemDir {
 }
 
 /* ---------------------------------------------------------------- the store */
-const store = { root: null, demo: false, notes: new Map(), errors: [], writing: 0 };
+const store = { root: null, demo: false, notes: new Map(), errors: [], writing: 0, hook: null, mute: 0 };
+const ARCHIVE = "archive/deleted";   /* deleted notes are moved here and can be restored (1.4) */
+/* after every create / change / delete, store.hook(action, note, before) logs it (History, extras.js); writes made by the hook itself are muted */
+async function changed(action, n, before) { if (store.hook && !store.mute) { store.mute++; try { await store.hook(action, n, before); } catch (e) { console.warn("history", e); } finally { store.mute--; } } }
 
 /* Where each kind of note is created. Reading looks at `type` only, so notes can be moved. */
 const FOLDER = {
   settings: "", member: "members", transaction: "transactions/{year}", loan: "loans", fund: "fund", objective: "objectives",
   project: "projects", task: "projects/tasks", meeting: "meetings/{year}", plan: "plans", funding: "expenses", year: "years",
-  cashcount: "cash counts", update: "updates/{year}", devnote: "appdev/{year}",
+  cashcount: "cash counts", update: "updates/{year}", devnote: "appdev/{year}", history: "history/{year}", close: "closed months",
 };
 const TYPES = Object.keys(FOLDER);
 
@@ -106,7 +109,7 @@ async function readNoteFile(path, dirPath, dir, fileName, handle) {
   const file = await withTimeout(handle.getFile(), 15000, "the file didn't answer within 15 s");
   const text = await file.text();
   const n = { path, dirPath, dir, handle, fileName, name: fileName.replace(/\.md$/i, ""), lastModified: file.lastModified, size: file.size, text };
-  try { const p = parseNote(text); Object.assign(n, p); n.type = String(p.props.type || "note").trim().toLowerCase(); }
+  try { const p = parseNote(text); Object.assign(n, p); n.type = String(p.props.type || "note").trim().toLowerCase(); n.deleted = path.startsWith(ARCHIVE + "/"); }
   catch (e) { n.error = e.message; n.type = "?"; n.props = {}; n.keys = []; n.body = ""; }
   store.notes.set(path, n);
   return n;
@@ -132,7 +135,9 @@ async function scanStore() {
   if (store.root) await walk(store.root, "");
   for (const n of store.notes.values()) if (n.error) store.errors.push({ path: n.path, why: n.error });
 }
-const notesOf = type => [...store.notes.values()].filter(n => !n.error && n.type === type);
+const notesOf = type => [...store.notes.values()].filter(n => !n.error && !n.deleted && n.type === type);
+const deletedNotes = () => [...store.notes.values()].filter(n => n.deleted);
+const liveNotes = () => [...store.notes.values()].filter(n => !n.error && !n.deleted);
 const settingsNote = () => notesOf("settings")[0] || null;
 
 async function dirFor(path, create = true) {
@@ -177,6 +182,8 @@ function baseNameFor(type, p) {
     case "transaction": return `${p.date} ${p.member || "group"} ${p.kind}`;
     case "loan": return `${p.code || ""} ${p.member || ""}`.trim();
     case "fund": return `${p.month} ${p.title || "fund statement"}`;
+    case "history": return `${p.month} History`;
+    case "close": return `${p.month} closed`;
     case "meeting": case "update": case "cashcount": case "devnote": return `${p.date || p.month || todayISO()} ${p.title || type}`;
     default: return `${p.code ? p.code + " " : ""}${p.title || type}`;
   }
@@ -189,7 +196,9 @@ async function createNote(type, props, body = "") {
   const fileName = await uniqueName(dir, safeFileName(stripLinks(baseNameFor(type, p))));
   const handle = await dir.getFileHandle(fileName, { create: true });
   await writeFile(handle, serializeNote(p, keys, body));
-  return readNoteFile(dirPath ? `${dirPath}/${fileName}` : fileName, dirPath, dir, fileName, handle);
+  const n = await readNoteFile(dirPath ? `${dirPath}/${fileName}` : fileName, dirPath, dir, fileName, handle);
+  await changed("Created", n);
+  return n;
 }
 const REMOVE = Symbol("remove");
 async function saveNote(n, changes, body) {
@@ -198,13 +207,35 @@ async function saveNote(n, changes, body) {
   const p = Object.assign({}, n.props, changes, { modified: nowISO() });
   for (const k of Object.keys(p)) if (p[k] === REMOVE) delete p[k];
   await writeFile(n.handle, serializeNote(p, n.keys, body === undefined ? n.body : body));
-  return readNoteFile(n.path, n.dirPath, n.dir, n.fileName, n.handle);
+  const before = { props: n.props, body: n.body };
+  const out = await readNoteFile(n.path, n.dirPath, n.dir, n.fileName, n.handle);
+  await changed("Changed", out, before);
+  return out;
 }
+/* "Delete" moves the note to archive/deleted/<its path> (1.4) – nothing is lost; Restore puts it back */
 async function deleteNote(n) {
   if (!(await canWrite())) throw new Error("No permission to write to the data folder.");
   await assertUnchanged(n);
+  const dirPath = `${ARCHIVE}/${n.dirPath}`.replace(/\/$/, ""), dir = await dirFor(dirPath, true);
+  const fileName = await uniqueName(dir, n.fileName.replace(/\.md$/i, ""));
+  const h = await dir.getFileHandle(fileName, { create: true });
+  await writeFile(h, serializeNote({ ...n.props, deleted: nowISO(), deleted_from: n.path }, [...n.keys, "deleted", "deleted_from"], n.body));
   await n.dir.removeEntry(n.fileName);
   store.notes.delete(n.path);
+  const moved = await readNoteFile(`${dirPath}/${fileName}`, dirPath, dir, fileName, h);
+  await changed("Deleted", n);
+  return moved;
+}
+async function restoreNote(n) {
+  if (!(await canWrite())) throw new Error("No permission to write to the data folder.");
+  const to = String(n.props.deleted_from || "").split("/"), name = (to.pop() || n.fileName).replace(/\.md$/i, ""), dirPath = to.join("/"), dir = await dirFor(dirPath, true);
+  const fileName = await uniqueName(dir, name), h = await dir.getFileHandle(fileName, { create: true });
+  const p = { ...n.props }; delete p.deleted; delete p.deleted_from;
+  await writeFile(h, serializeNote(p, n.keys.filter(k => k !== "deleted" && k !== "deleted_from"), n.body));
+  await n.dir.removeEntry(n.fileName); store.notes.delete(n.path);
+  const back = await readNoteFile(dirPath ? `${dirPath}/${fileName}` : fileName, dirPath, dir, fileName, h);
+  await changed("Restored", back);
+  return back;
 }
 
 /* ---------------------------------------------------------------- remembering the folder (IndexedDB) – from Horizons */

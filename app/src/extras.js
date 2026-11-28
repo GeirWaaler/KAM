@@ -31,6 +31,9 @@ function followUps() {
   for (const e of store.errors) add("Data", `The note ${e.path} could not be read: ${e.why}`, "go:settings", "bad");
   for (const m of db.meetings) if (String(m.date) < todayISO() && !String(m.note.body || "").trim()) add("Admin", `The meeting on ${m.date} has no minutes.`, `edit:${m.note.path}`, "info");
   if (appdevOn()) { const n = devnotes().filter(d => (d.status || "new") === "new").length; if (n) add("Admin", `${n} AppDev comment${n > 1 ? "s are" : " is"} not yet sent to the developer.`, "go:appdev", "info"); }
+  const lastM = addMonths(thisMonth, -1);
+  if (now.getDate() >= 10 && db.tx.some(t => t.month === lastM) && !closedMonths().has(lastM)) add("Admin", `${MONTHS_LONG[Number(lastM.slice(5)) - 1]} isn't closed yet – check its payments and fund statement, then close it on Receipts.`, "go:receipts", "info");
+  if (!store.demo && backupAge() > 31) add("Admin", db.settings.last_backup ? `The last backup is ${backupAge()} days old – download a new one under Settings.` : "No backup has been made yet – download one under Settings.", "go:settings", "warn");
   if (now.getMonth() === 11) add("Admin", `It's December: do the year-end (Year-end) and download the handover zip (Settings) for the next admin.`, "go:yearend", "info");
   return out;
 }
@@ -71,16 +74,22 @@ const TOUR = [
   { ch: "Finding your way", tab: "home", sel: "#tabs", title: "The menu", text: "The menu on the left holds every page, grouped: Money, Group, Reporting and Housekeeping. Narrow menu at the bottom shrinks it to icons." },
   { ch: "Finding your way", tab: "home", sel: "#period", title: "Reporting month", text: "Pick the month to report on. The dashboards, statements and targets all follow it." },
   { ch: "Finding your way", tab: "home", sel: ".kpis", title: "Key figures", text: "Every number is added up from the payments recorded – nothing is typed into a total." },
+  { ch: "Finding your way", tab: "home", sel: "#helpPill", title: "Help", text: "The ? in the corner (or F1) explains the page you're on, with Show me – and searches the help for every page." },
   { ch: "Finding your way", tab: "home", sel: "#followup", title: "Follow up", text: "What needs attention: members behind on savings, overdue loans, a missing fund statement, data problems. Fix one and it disappears." },
-  { ch: "Finding your way", tab: "members", sel: "#pickMember", title: "Members", text: "Contacts with local time, each member's statement, the committee – and a page per member." },
+  { ch: "Finding your way", tab: "members", sel: "#mpills", title: "Members", text: "Click a member's pill to see their statement right here, or several pills to compare them. All members shows everyone: contacts, statements and the committee." },
   { ch: "Recording money", tab: "receipts", sel: "[data-pay]", title: "Record a payment", text: "One payment at a time: member, date, kind (savings, membership, welfare, penalty, loan repayment…) and amount." },
   { ch: "Recording money", tab: "receipts", sel: "[data-round]", title: "Monthly round", text: "Enter every member's payments for a month in one table – the quickest way after each collection." },
-  { ch: "Recording money", tab: "receipts", sel: ".tablewrap", title: "The ledger", text: "The Receipts sheet as you know it: each member by month, the receipt summary, the fund and cash at hand." },
+  { ch: "Recording money", tab: "receipts", sel: ".tablewrap", title: "The ledger", text: "The Receipts sheet as you know it: each member by month, the receipt summary, the fund and cash at hand. Pick a member's pill to see only them." },
+  { ch: "Recording money", tab: "receipts", sel: "#rcToggle", title: "Fold the members", text: "Each member folds to one line with their year's key numbers – click it to open, or Expand all / Collapse all." },
+  { ch: "Recording money", tab: "receipts", sel: "#closeMonth", title: "Close the month", text: "Once a month's payments and fund statement are checked against the statements, close it. Later changes ask first and show in History." },
   { ch: "Loans and the fund", tab: "interest", sel: "[data-new='fund']", title: "The fund statement", text: "Each month, enter the fund's deposits and interest from its statement. The interest is then shared among the members automatically." },
   { ch: "Loans and the fund", tab: "interest", sel: ".card", title: "How interest is shared", text: "By each member's balance at the start of the month. The shares always add up exactly to what the fund earned." },
   { ch: "Loans and the fund", tab: "loans", sel: "[data-new='loan']", title: "Loans", text: "A loan request, its approval and payout; repayments are payments linked to the loan. Open a loan for its repayment plan and the printable application form." },
-  { ch: "Reporting and year-end", tab: "updates", sel: "#copyMail", title: "The monthly update", text: "Copy the update, open the email with every member in BCC, paste – and post the short version in the WhatsApp group." },
+  { ch: "Reporting and year-end", tab: "home", sel: "#presentBtn", title: "▶ Present", text: "At the monthly meeting, play the financial position as slides – arrow keys to move, Esc to stop." },
+  { ch: "Reporting and year-end", tab: "updates", sel: "#copyMail", title: "The monthly update", text: "Copy the update, open the email with every member in BCC, paste – and post the short version in the WhatsApp group. Save as PDF makes a document to attach." },
   { ch: "Reporting and year-end", tab: "yearend", sel: "#divYear", title: "Year-end", text: "The dividend calculation and share-out list, and the cash count." },
+  { ch: "Reporting and year-end", tab: "history", sel: "#histQ", title: "History", text: "Every change saved – who, what and when – kept in the data folder." },
+  { ch: "Reporting and year-end", tab: "settings", sel: "#backupBtn", title: "Backup and Excel", text: "Download a backup now and then (Follow up reminds you). Export to Excel gives everything as a spreadsheet, if ever needed." },
   { ch: "Reporting and year-end", tab: "appdev", sel: "#devNew", title: "AppDev", text: "Ideas or problems with the app? Write them here and send them to the developer.", when: () => appdevOn() },
   { ch: "Reporting and year-end", tab: "settings", sel: "#handover", title: "The handover", text: "At the end of your year, download the handover zip and send it to the next admin. That's the tour – press Finish, then Leave the demo to work in your own data." },
 ];
@@ -89,7 +98,7 @@ const tourSteps = () => TOUR.filter(s => !s.when || s.when());
 async function startTour() {
   try { localStorage.setItem("kam-tour-seen", "1"); } catch {}
   if (!store.demo) await startDemo();
-  tour.i = 0; showTourStep();
+  view.sel = []; view.rcOpen = null; tour.i = 0; showTourStep();
 }
 function showTourStep() {
   document.querySelectorAll(".tourhl").forEach(e => e.classList.remove("tourhl"));

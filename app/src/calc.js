@@ -18,7 +18,9 @@ const addMonths = (mk, k) => { let [y, m] = mk.split("-").map(Number); m += k; w
 const daysInMonth = mk => { const [y, m] = mk.split("-").map(Number); return new Date(y, m, 0).getDate(); };
 function monthRange(a, b) { const out = []; if (!a || !b || a > b) return out; for (let m = a; m <= b; m = addMonths(m, 1)) out.push(m); return out; }
 const linkName = v => { const s = String(v ?? ""); const m = s.match(/\[\[([^\]|#]+)/); return (m ? m[1] : s).trim(); };
-const fmt = (n, cur) => (cur === false ? "" : (cur || "UGX") + " ") + Math.round(num(n)).toLocaleString("en-US");
+/* how amounts are written – the app sets MONEY_FMT from Settings › How amounts are shown (1.4) */
+let MONEY_FMT = null;
+const fmt = (n, cur) => MONEY_FMT && cur !== false ? MONEY_FMT(n) : (cur === false ? "" : (cur || "UGX") + " ") + Math.round(num(n)).toLocaleString("en-US");
 const fmtN = n => Math.round(num(n)).toLocaleString("en-US");
 
 /* ---------------------------------------------------------------- from notes to db */

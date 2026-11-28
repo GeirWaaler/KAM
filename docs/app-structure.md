@@ -13,9 +13,9 @@ The menu on the left groups the pages – the main pages first, then Money, Grou
 
 | Page | What it is for | Replaces in the workbook |
 | --- | --- | --- |
-| Home | The group dashboard: key figures, objectives, highlights, projects, 3 graphs, members against target | Group Dashboard |
-| Members | Member list, contacts and local time, statements, committee, 2 graphs; a page per member | Individuals Dashboard, STT |
-| Receipts | Every payment by member and month, the receipt summary, the fund, cash at hand; Monthly round | Receipts |
+| Home | The group dashboard: Follow up, key figures, objectives, highlights, projects, 3 graphs, members against target; ▶ Present for the monthly meeting | Group Dashboard |
+| Members | Member pills: everyone, one member's statement, or several side by side; contacts and local time, statements, committee, 2 graphs; Save as PDF | Individuals Dashboard, STT |
+| Receipts | Every payment by member and month (member pills, each member folds to one line), the receipt summary, the fund, cash at hand; Monthly round; Close the month | Receipts |
 | Fund & interest | The fund month by month and how its interest is shared; the workbook's figure beside the recalculated one | Receipts rows 107–111, Interest Earned rows |
 | Loans | Loans, repayments, interest due, repayment plan, printable application | EXP LOAN, Loan Application |
 | Projects | Objectives, projects and activities, the project tracker timeline | Group Dashboard tables, Project Tracker |
@@ -26,7 +26,8 @@ The menu on the left groups the pages – the main pages first, then Money, Grou
 | Updates | The monthly update by email and WhatsApp | – (new) |
 | AppDev | This explanation, the data model, and comments for the developer | – (new) |
 | About | The workbook analysis, what is waiting to be built, what's new | – |
-| Settings | Data folder, SACCO settings, checks, handover zip, AppDev on/off | – |
+| History | Every change saved – who, what and when | – (new) |
+| Settings | Data folder, how amounts are shown, backup, Export to Excel, handover zip, AppDev on/off, deleted notes, checks | – |
 
 ## How the figures are calculated
 
@@ -34,6 +35,12 @@ The menu on the left groups the pages – the main pages first, then Money, Grou
 - **Interest:** each month's fund interest is shared by each member's balance at the start of the month (savings paid in before the month, less withdrawals, plus interest already shared). Shares are whole shillings and add up exactly to the fund's interest. A check on every money page confirms it.
 - **Loans:** interest each month on what is still owed (declining balance), at the rate and period in Settings. Repayments are payments linked to the loan.
 - **Targets:** target to date = monthly target × months so far; consistency and the risk flag count the months with a savings payment.
+
+## Help and safety
+
+- **Help**: the ? in the bottom right corner (or F1) explains the page you are on and searches all the help.
+- **History** logs every change. **Deleted notes** go to the archive and can be restored. **Closed months** ask before a change. **Backups** are one click under Settings, and Follow up reminds you.
+- **Export to Excel** under Settings gives everything as a spreadsheet – the way back, if the group ever wants it.
 
 ## Changing the app
 

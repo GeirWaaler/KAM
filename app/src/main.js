@@ -4,7 +4,7 @@ const APP_SRC = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;   /* t
 /* the properties each kind of note has (shown in the editor; any other property already in a note is kept and shown too) */
 const STATUS_MEMBER = ["active", "paused", "left", "prospective"], STATUS_LOAN = ["requested", "active", "repaid", "defaulted", "declined"];
 const FIELDS = {
-  member: [["code", "text"], ["title", "text"], ["status", STATUS_MEMBER], ["joined", "date"], ["role", "text"], ["country", "text"], ["city", "text"], ["timezone", "text"], ["email", "text"], ["phone", "text"],
+  member: [["code", "text"], ["title", "text"], ["short_name", "text"], ["status", STATUS_MEMBER], ["joined", "date"], ["role", "text"], ["country", "text"], ["city", "text"], ["timezone", "text"], ["email", "text"], ["phone", "text"],
     ["monthly_target", "number"], ["annual_target", "number"], ["workbook_interest_2025", "number"], ["workbook_interest_2026", "number"]],
   transaction: [["date", "date"], ["member", "member"], ["kind", Object.keys(KINDS)], ["amount", "number"], ["loan", "loan"], ["project", "project"], ["reference", "text"]],
   loan: [["code", "text"], ["member", "member"], ["guarantor", "member"], ["applied", "date"], ["approved", "date"], ["paid_out", "date"], ["amount", "number"], ["rate", "number"], ["months", "number"], ["purpose", "text"], ["status", STATUS_LOAN]],
@@ -17,11 +17,11 @@ const FIELDS = {
   devnote: [["date", "date"], ["title", "text"], ["kind", DEV_KINDS], ["page", "text"], ["status", DEV_STATUS], ["sent", "date"]],
   year: [["year", "number"], ["pool", "number"], ["decided", "date"]], cashcount: [["date", "date"], ["title", "text"]], update: [["date", "date"], ["title", "text"]],
   settings: [["sacco_name", "text"], ["currency", "text"], ["fund_name", "text"], ["loan_rate", "number"], ["loan_max_months", "number"], ["default_fee", "number"], ["registration_fee", "number"],
-    ["vision", "text"], ["highlights", "list"], ["agenda", "list"], ["banknotes", "list"], ["admin", "text"], ["admin_year", "number"], ["appdev", ["on", "off"]], ["dev_email", "text"]],
+    ["vision", "text"], ["highlights", "list"], ["agenda", "list"], ["banknotes", "list"], ["admin", "text"], ["admin_year", "number"], ["amount_display", AMOUNT_MODES.map(x => x[0])], ["appdev", ["on", "off"]], ["dev_email", "text"], ["last_backup", "date"]],
 };
 const LABELS = { title: "Name / title", sacco_name: "SACCO name", fund_name: "Fund name", loan_rate: "Loan interest per month (0.05 = 5%)", loan_max_months: "Longest repayment (months)", default_fee: "Default fee",
   registration_fee: "Registration fee", monthly_target: "Monthly savings target", annual_target: "Annual savings target", workbook_interest_2025: "Interest the workbook showed, 2025", workbook_interest_2026: "Interest the workbook showed, 2026",
-  paid_out: "Paid out", admin: "This year's admin (code)", admin_year: "Admin year", highlights: "Last month's highlights (one per line)", agenda: "Standing agenda (item | responsible, one per line)", banknotes: "Banknotes for the cash count", attendees: "Attendees (one per line)", appdev: "AppDev page", dev_email: "Developer's email (AppDev)", page: "About the page" };
+  paid_out: "Paid out", admin: "This year's admin (code)", admin_year: "Admin year", highlights: "Last month's highlights (one per line)", agenda: "Standing agenda (item | responsible, one per line)", banknotes: "Banknotes for the cash count", attendees: "Attendees (one per line)", short_name: "Short name (charts and pills)", amount_display: "How amounts are shown", last_backup: "Last backup", appdev: "AppDev page", dev_email: "Developer's email (AppDev)", page: "About the page" };
 const BODY_LABEL = { devnote: "Comment", meeting: "Minutes and decisions", plan: "The plan", loan: "Notes", member: "Notes", project: "Notes", settings: "Notes" };
 
 /* ---------------------------------------------------------------- the editor */
@@ -62,12 +62,18 @@ function openEditor(type, note, preset = {}) {
     if (type === "member" && (!out.code || !out.title)) throw new Error("A member needs a code (e.g. K014) and a name.");
     if (type === "member" && !note && db.members.some(m => m.code.toLowerCase() === out.code.toLowerCase())) throw new Error(`There is already a member ${out.code}.`);
     const b = $("f__body") ? $("f__body").value : undefined;
-    if (note) await saveNote(note, out, b); else await createNote(type, out, b || "");
-    $("dlg").close(); refreshDb(); render(); status("Saved.");
+    const mk = type === "transaction" ? String(out.date || "").slice(0, 7) : type === "fund" ? String(out.month || "") : "", was = note ? monthOfNote(note) : "";
+    if (!okToChangeClosed(mk) || (was !== mk && !okToChangeClosed(was))) return;
+    const saved = note ? await saveNote(note, out, b) : await createNote(type, out, b || "");
+    $("dlg").close(); refreshDb(); render();
+    const t = !note && type === "transaction" ? db.tx.find(x => x.note.path === saved.path) : null;
+    if (t && t.member && MONEY_IN.includes(t.kind)) status(`Saved. Send ${esc(mName(t.member))} a receipt: ${receiptLinks(t)}`, "ok");
+    else status("Saved.");
   });
   if ($("edDelete")) $("edDelete").onclick = () => guarded(async () => {
-    if (!confirm("Delete this note from the data folder? This cannot be undone in the app.")) return;
-    await deleteNote(note); $("dlg").close(); refreshDb(); render(); status("Deleted.");
+    if (!okToChangeClosed(monthOfNote(note))) return;
+    if (!confirm("Delete this note? It moves to the archive folder and can be restored under Settings.")) return;
+    await deleteNote(note); $("dlg").close(); refreshDb(); render(); status("Deleted – it is kept in the archive and can be restored under Settings.");
   });
 }
 const findNote = path => store.notes.get(path);
@@ -93,9 +99,26 @@ function wire() {
   const on = (sel, fn) => document.querySelectorAll(sel).forEach(el => el.addEventListener("click", e => { e.preventDefault(); fn(el); }));
   on("#tabs [data-tab]", el => go(el.dataset.tab, { loan: "", receiptsKind: "all" }));
   on("[data-go]", el => go(el.dataset.go));
-  on("#navToggle", () => { try { localStorage.setItem("kam-nav", navMini() ? "wide" : "mini"); } catch {} renderTabs(); wire(); });
+  on("#navToggle", () => { try { localStorage.setItem("kam-nav", navMini() ? "wide" : "mini"); } catch {} render(); });
+  on("[data-sel]", el => { const c = el.dataset.sel; view.sel = !c ? [] : view.sel.includes(c) ? view.sel.filter(x => x !== c) : [...view.sel, c]; view.rcOpen = null; render(); });
+  on("[data-rctoggle]", el => { const c = el.dataset.rctoggle; view.rcOpen.has(c) ? view.rcOpen.delete(c) : view.rcOpen.add(c); render(); });
+  on("tr.mhead", el => { if (!view.sel.length && view.rcOpen) { const c = el.dataset.rc; view.rcOpen.has(c) ? view.rcOpen.delete(c) : view.rcOpen.add(c); render(); } });
+  on("#rcToggle", () => { const all = activeMembers(db).map(m => m.code), open = view.rcOpen.size < all.length; view.rcOpen = new Set(open ? all : []); try { localStorage.setItem("kam-rc", open ? "open" : "closed"); } catch {} render(); });
+  on("#closeMonth", el => { if (el.dataset.close) closeMonthDialog(el.dataset.close); else go("history"); });
+  on("#structUpdate", () => guarded(async () => { await applyStructure(); await scanStore(); refreshDb(); render(); status("The data folder is updated."); }));
+  on("#backupBtn", () => guarded(() => downloadBackup("backup")));
+  on("#exportXlsx", () => guarded(async () => exportXlsx()));
+  on("#pdfUpdate", () => pdfUpdate());
+  on("#pdfMember", () => pdfMember(selected()[0]));
+  on("#presentBtn", () => startPresent());
+  on("[data-restore]", el => guarded(async () => { const n = findNote(el.dataset.restore); if (n) { await restoreNote(n); refreshDb(); render(); status("Restored."); } }));
+  on("[data-receipt]", el => { const t = db.tx.find(x => x.note.path === el.dataset.receipt); if (t) receiptDialog(t); });
+  if ($("amountMode")) $("amountMode").onchange = () => guarded(async () => { await saveNote(settingsNote(), { amount_display: $("amountMode").value }); refreshDb(); render(); status("Amounts are now shown " + ({ numbers: "as plain numbers", code: "with the currency code", USh: "with USh", slash: "the Ugandan way, 1,300,000/=" })[amountMode()] + "."); });
+  if ($("histQ")) $("histQ").oninput = () => { view.histQ = $("histQ").value; const pos = $("histQ").selectionStart; render(); $("histQ").focus(); try { $("histQ").setSelectionRange(pos, pos); } catch {} };
+  if ($("histMonth")) $("histMonth").onchange = () => { view.histMonth = $("histMonth").value; render(); };
+  if ($("tryCard")) wireTry($("tryCard"));
   on("[data-tour]", () => guarded(startTour));
-  on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("member", { member: v }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
+  on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("members", { sel: [v] }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
   if ($("appdevToggle")) $("appdevToggle").onclick = () => guarded(async () => { await saveNote(settingsNote(), { appdev: appdevOn() ? "off" : "on" }); refreshDb(); render(); status(`AppDev is ${appdevOn() ? "on" : "off"}.`); });
   if ($("devNew")) $("devNew").onclick = () => guarded(async () => {
     const title = $("devTitle").value.trim(), text = $("devText").value.trim();
@@ -114,7 +137,7 @@ function wire() {
     $("devMark").onclick = () => guarded(async () => { for (const d of list) await saveNote(d.note, { status: "sent", sent: todayISO() }); refreshDb(); render(); status("Marked as sent."); });
   };
   if ($("devCopy")) $("devCopy").onclick = () => guarded(async () => { await navigator.clipboard.writeText(devMailText(unsentDev())); status("Copied – paste into an email to the developer."); });
-  on("[data-member]", el => go("member", { member: el.dataset.member }));
+  on("[data-member]", el => go("members", { sel: [el.dataset.member] }));
   on("[data-edit]", el => { const n = findNote(el.dataset.edit); if (n) openEditor(n.type, n); });
   on("[data-new]", el => newOf(el.dataset.new));
   on("[data-pay]", el => openPayment(el.dataset.pay, el.dataset.paykind || "savings", el.dataset.payloan || ""));
@@ -130,7 +153,6 @@ function wire() {
     await createNote("year", { title: `${y} year-end`, year: y, pool, decided: todayISO(), basis: "savings", dividends: rows.map(r => `${r.code}: ${r.dividend}`) }, body);
     refreshDb(); render(); status(`Saved the ${y} year-end record.`);
   }));
-  const pick = $("pickMember"); if (pick) pick.onchange = () => pick.value && go("member", { member: pick.value });
   const gs = $("ganttStart"); if (gs) gs.onchange = () => { view.ganttStart = gs.value; render(); };
   const dy = $("divYear"); if (dy) dy.onchange = () => { view.divYear = Number(dy.value); view.divPool = ""; render(); };
   const dp = $("divPool"); if (dp) dp.onchange = () => { view.divPool = dp.value; render(); };
@@ -138,6 +160,7 @@ function wire() {
   if ($("roundSave")) $("roundSave").onclick = () => guarded(async () => {
     const date = $("roundDate").value || `${$("roundMonth").value}-01`; let n = 0;
     if (date.slice(0, 7) !== $("roundMonth").value) throw new Error("The payment date must be in the chosen month.");
+    if (!okToChangeClosed(date.slice(0, 7))) return;
     for (const el of document.querySelectorAll(".rin")) {
       const a = num(el.value); if (!(a > 0)) continue;
       const code = el.dataset.m, kind = el.dataset.k, loan = kind.startsWith("loan_") ? db.loans.find(l => l.member === code && loanState(db, l, date.slice(0, 7)).outstanding > 0) : null;
@@ -165,7 +188,7 @@ function wire() {
   if ($("pickFolder")) $("pickFolder").onclick = pickFolder;
   if ($("reload")) $("reload").onclick = () => guarded(async () => { await scanStore(); refreshDb(); render(); status("Read again."); });
   if ($("setup")) $("setup").onclick = () => guarded(setupFolder);
-  if ($("handover")) $("handover").onclick = () => guarded(handover);
+  if ($("handover")) $("handover").onclick = () => guarded(() => downloadBackup("handover"));
 }
 
 /* ---------------------------------------------------------------- the data folder */
@@ -178,7 +201,7 @@ async function useFolder(h, ask) {
   $("folderChip").textContent = `📁 ${h.name}`; $("folderChip").title = "The data folder KAM is working in";
   refreshDb();
   if (!settingsNote()) { view.tab = "settings"; render(); status("This folder has no KAM settings yet. If it is the right (empty) folder, press <b>Set up this folder for KAM</b>.", "warn"); return; }
-  render();
+  render(); whatsNewPopup();
 }
 async function pickFolder() {
   if (!window.showDirectoryPicker) { status("This browser can't open folders. Use <b>Chrome</b> or <b>Edge</b> on a computer, and open KAM.html directly.", "err"); return; }
@@ -213,26 +236,33 @@ function welcome(h) {
 }
 
 /* ---------------------------------------------------------------- the handover zip */
-async function handover() {
+async function handoverZip(kind = "handover") {
   const enc = new TextEncoder(), files = [], end = repMonthKey(), k = kpis(db, alloc, view.year, view.month);
   const addDir = async (dir, path) => { for await (const [name, h] of dir.entries()) { if (name.startsWith(".")) continue; const p = path ? `${path}/${name}` : name;
     if (h.kind === "directory") await addDir(h, p); else files.push({ name: `KAM-data/${p}`, data: new Uint8Array(await (await h.getFile()).arrayBuffer()) }); } };
   await addDir(store.root, "");   /* every file in the folder – notes, the archive, anything else kept there */
-  const lines = [`KAM handover – ${db.settings.sacco_name || ""}`, `Made ${nowISO()} by the ${db.settings.admin_year || view.year} admin (${db.settings.admin || "–"})`, `Figures as at the end of ${end}`, "",
+  const lines = [`KAM ${kind} – ${db.settings.sacco_name || ""}`, `Made ${nowISO()} by the ${db.settings.admin_year || view.year} admin (${db.settings.admin || "–"})`, `Figures as at the end of ${end}`, "",
     `Notes in the data folder: ${store.notes.size}`, `Total saved: ${money(k.totalSaved)}`, `Fund value: ${money(k.fundValue)}`, `Interest shared to date: ${money(k.shared)}`, "", "Member            Savings      Fund balance   Loan outstanding"];
   let check = 0;
   for (const m of db.members) { const s = savingsBalance(db, m.code, end), f = fundBalance(db, alloc, m.code, end), l = loanOutstanding(db, m.code, end); check += s + f + l; lines.push(`${(m.code + " " + m.name).padEnd(28).slice(0, 28)} ${nn(s).padStart(12)} ${nn(f).padStart(14)} ${nn(l).padStart(14)}`); }
   lines.push("", `Check number: ${check}`, "", "The next admin: unzip, open KAM.html in Chrome or Edge, choose Open the data folder › KAM-data. Settings › Download handover zip shows the same check number when everything arrived.");
   files.push({ name: "Handover summary.txt", data: enc.encode(lines.join("\r\n")) }, { name: "KAM.html", data: enc.encode(APP_SRC) });
   const blob = makeZip(files), a = document.createElement("a");
-  a.href = URL.createObjectURL(blob); a.download = `KAM-handover-${todayISO()}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
-  status(`Handover zip made: ${files.length} files. Check number ${check}.`);
+  a.href = URL.createObjectURL(blob); a.download = `KAM-${kind}-${todayISO()}.zip`; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 4000);
+  return files.length;
 }
 
 /* ---------------------------------------------------------------- start */
 $("repYear").onchange = () => { view.year = Number($("repYear").value); render(); };
 $("repMonth").onchange = () => { view.month = Number($("repMonth").value); render(); };
 $("leaveDemo").onclick = () => location.reload();
+$("helpPill").onclick = () => $("helpCard").hidden ? openHelp() : closeHelp();
+document.addEventListener("keydown", e => {
+  if ($("present") && !$("present").hidden) { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); pres.i++; showSlide(); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); pres.i--; showSlide(); } else if (e.key === "Escape") stopPresent(); return; }
+  if (e.key === "F1") { e.preventDefault(); $("helpCard").hidden ? openHelp() : closeHelp(); }
+  else if (e.key === "Escape" && !$("helpCard").hidden) { e.preventDefault(); closeHelp(); }
+});
+document.addEventListener("fullscreenchange", () => { if (!document.fullscreenElement && $("present") && !$("present").hidden) stopPresent(); });
 document.title = `KAM ${APP.version}`;
 (async () => {
   let h = null; try { h = await idb("readonly", st => st.get("folder")); } catch {}

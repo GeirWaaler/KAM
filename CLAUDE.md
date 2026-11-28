@@ -18,7 +18,10 @@ Builder: Geir (not a member of the group). The group's contact: Arnold. Each yea
 
 ## Code
 
-- `app/src/` – `store.js` (data folder, notes, zip), `calc.js` (all calculations, pure – tested in node), `charts.js` (SVG charts), `views.js` (pages), `extras.js` (AppDev, Follow up, the tour – `TOUR`; keep the steps pointing at real pages, the test checks it), `main.js` (editor, events, start), `shell.html` (layout and CSS). `build.py` concatenates them into `dist/KAM.html` with the demo data, About texts and changelog.
+- `app/src/` – `store.js` (data folder, notes, zip), `calc.js` (all calculations, pure – tested in node), `charts.js` (SVG charts), `views.js` (pages), `extras.js` (AppDev, Follow up, the tour – `TOUR`; keep the steps pointing at real pages, the test checks it), `features.js` (History, closed months, data folder updates – `STRUCTURE`, Help – `HELP`, ▶ Present, What's new, receipts, backup, Excel, PDF), `main.js` (editor, events, start), `shell.html` (layout and CSS). `build.py` concatenates them into `dist/KAM.html` with the demo data, About texts and changelog.
 - No external libraries – the app must work offline from one file.
 - Every figure is calculated from transactions, fund notes and loans; never store a total.
+- Every saved change goes through `createNote` / `saveNote` / `deleteNote` (store.js) – they log to History; delete moves the note to `archive/deleted/`.
+- When the data folder needs something new, bump `STRUCTURE_VERSION` and add to `STRUCTURE` in `features.js` – never change existing notes; keep `tools/build_sample_data.py` at the latest version.
+- Every release: a CHANGELOG entry `### KAM x.y – title · date` ending with a `**Try:**` list (`- [ ] what to do <!-- show: #selector; tab: page -->`) – the What's new pop-up and About show it; the test checks every step. Keep `HELP` current too: every menu page has help, and every Show me points at something (tested).
 - Tests: `node tests/test_calc.mjs` and `python3 tests/test_app.py --shots`, both `ALL PASSED` before committing.

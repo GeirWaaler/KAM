@@ -65,12 +65,12 @@ def main():
         "agenda": ["Opening prayer | Selected member", "Welcome note and introduction | Chairperson", "Review of previous minutes | Secretary",
                    "Review of financial position | Treasurer", "Any other SACCO business | Chairperson", "AOB | Round table", "Closing prayer | Selected member"],
         "banknotes": [50000, 20000, 10000, 5000, 2000, 1000, 500, 200, 100],
-        "admin": "K001", "admin_year": 2026, "appdev": "on", "dev_email": "developer@example.com",
+        "admin": "K001", "admin_year": 2026, "appdev": "on", "dev_email": "developer@example.com", "amount_display": "numbers", "structure_version": 2, "last_backup": "2026-11-20",
     }, "Demo data – every name and amount here is invented.")
 
     for code, name, country, city, tz, target, role in MEMBERS:
         note(f"members/{code} {name}.md", {
-            "type": "member", "code": code, "title": name, "status": "active", "joined": "2024-01-15",
+            "type": "member", "code": code, "title": name, "short_name": name.split()[0], "status": "active", "joined": "2024-01-15",
             "country": country, "city": city, "timezone": tz, "email": f"{name.split()[0].lower()}@example.com", "phone": "",
             "role": role, "monthly_target": target, "annual_target": target * 12,
             "workbook_interest_2025": random.randint(40, 90) * 10000, "workbook_interest_2026": random.randint(60, 140) * 10000,
@@ -163,6 +163,11 @@ def main():
     note("cash counts/2026-10-10 Cash count.md", {"type": "cashcount", "date": "2026-10-10", "title": "Cash count", "n50000": 4, "n20000": 3, "n10000": 5, "n5000": 2, "n1000": 7})
     note("appdev/2026/2026-11-20 Remember the last month in the monthly round.md", {"type": "devnote", "date": "2026-11-20", "title": "Remember the last month in the monthly round", "kind": "Idea", "page": "Receipts", "status": "new"},
          "When I open the monthly round it should start on the month after the last one I entered.")
+    note("closed months/2026-09 closed.md", {"type": "close", "month": "2026-09", "closed": "2026-10-10", "by": "K001"})
+    note("history/2026/2026-11 History.md", {"type": "history", "month": "2026-11", "title": "History"},
+         "- 2026-11-20 18:02 · Amina Nakato · Created · Savings 130,000 · Irene Nabirye · 2026-10-01 · transactions/2026/2026-10-01 K009 savings.md\n"
+         "- 2026-11-21 09:15 · Amina Nakato · Changed · Fund statement 2026-09 · interest 210,000 · ⚠ in a closed month · fund/2026/2026-09 Fund statement.md\n"
+         "- 2026-11-22 20:40 · Amina Nakato · Created · Member Joseph Lubega (K010) · members/K010 Joseph Lubega.md")
     print("demo data:", sum(len(f) for _, _, f in os.walk(OUT)), "notes in", OUT)
 
 

@@ -6,7 +6,7 @@ function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Ma
 const short = v => { const a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1).replace(/\.0$/, "") + "B" : a >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : a >= 1e3 ? Math.round(v / 1e3) + "K" : String(Math.round(v)); };
 
 /* grouped bars (bars: [{name, values}]) with optional lines on top (lines: [{name, values}]) */
-function barChart({ title, labels, bars = [], lines = [], height = 240, rotate = false }) {
+function barChart({ title, labels, tips, bars = [], lines = [], height = 240, rotate = false }) {
   const W = Math.max(360, labels.length * (bars.length * 16 + 20) + 70), H = height, L = 54, R = 10, T = 14, B = rotate ? 86 : 34;
   const all = [...bars, ...lines].flatMap(s => s.values).map(Number).filter(isFinite);
   const max = niceMax(Math.max(0, ...all)), min = Math.min(0, ...all), span = max - min || 1;
@@ -17,7 +17,7 @@ function barChart({ title, labels, bars = [], lines = [], height = 240, rotate =
     const gx = L + gw * i + (gw - bw * bars.length) / 2;
     bars.forEach((b, j) => {
       const v = Number(b.values[i]) || 0, y0 = y(Math.max(0, v)), h = Math.abs(y(v) - y(0));
-      s += `<rect x="${gx + j * bw}" y="${y0}" width="${bw - 2}" height="${Math.max(h, v ? 1 : 0)}" fill="${b.color || SERIES_COLORS[j]}"><title>${esc(lab)} – ${esc(b.name)}: ${fmtN(v)}</title></rect>`;
+      s += `<rect x="${gx + j * bw}" y="${y0}" width="${bw - 2}" height="${Math.max(h, v ? 1 : 0)}" fill="${b.color || SERIES_COLORS[j]}"><title>${esc(tips ? tips[i] : lab)} – ${esc(b.name)}: ${fmtN(v)}</title></rect>`;
     });
     const tx = L + gw * i + gw / 2;
     s += rotate ? `<text transform="translate(${tx},${H - B + 10}) rotate(-40)" class="ax" text-anchor="end">${esc(lab)}</text>` : `<text x="${tx}" y="${H - B + 16}" class="ax" text-anchor="middle">${esc(lab)}</text>`;
@@ -26,7 +26,7 @@ function barChart({ title, labels, bars = [], lines = [], height = 240, rotate =
     const c = ln.color || SERIES_COLORS[(bars.length + j) % 4];
     const pts = labels.map((_, i) => `${L + gw * i + gw / 2},${y(Number(ln.values[i]) || 0)}`);
     s += `<polyline points="${pts.join(" ")}" fill="none" stroke="${c}" stroke-width="2"/>`;
-    labels.forEach((lab, i) => { s += `<circle cx="${L + gw * i + gw / 2}" cy="${y(Number(ln.values[i]) || 0)}" r="3.5" fill="${c}"><title>${esc(lab)} – ${esc(ln.name)}: ${fmtN(ln.values[i])}</title></circle>`; });
+    labels.forEach((lab, i) => { s += `<circle cx="${L + gw * i + gw / 2}" cy="${y(Number(ln.values[i]) || 0)}" r="3.5" fill="${c}"><title>${esc(tips ? tips[i] : lab)} – ${esc(ln.name)}: ${fmtN(ln.values[i])}</title></circle>`; });
   });
   s += `<line x1="${L}" x2="${W - R}" y1="${y(0)}" y2="${y(0)}" class="zero"/></svg>`;
   const legend = [...bars.map((b, j) => [b.name, b.color || SERIES_COLORS[j], "bar"]), ...lines.map((l, j) => [l.name, l.color || SERIES_COLORS[(bars.length + j) % 4], "line"])];

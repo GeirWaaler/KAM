@@ -13,7 +13,7 @@ from playwright.sync_api import sync_playwright
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, "dist")
 SHOTS = os.path.join(ROOT, "tests", "screenshots")
-TABS = ["home", "members", "receipts", "interest", "loans", "projects", "meetings", "expenses", "plans", "yearend", "updates", "appdev", "about", "settings"]
+TABS = ["home", "members", "receipts", "interest", "loans", "projects", "meetings", "expenses", "plans", "yearend", "updates", "history", "appdev", "about", "settings"]
 failures = []
 
 
@@ -59,6 +59,8 @@ def poll(pg, want, folder="transactions/2026"):
 
 
 def main():
+    import subprocess
+    subprocess.run([sys.executable, os.path.join(ROOT, "tools", "build_sample_data.py")], check=True, stdout=subprocess.DEVNULL)   # the demo folder fresh
     shots = "--shots" in sys.argv
     os.makedirs(SHOTS, exist_ok=True)
     srv = serve()
@@ -109,6 +111,44 @@ def main():
         pg.click('#tabs [data-tab="about"]'); t = pg.inner_text("#main")
         check("Waiting to be built" in t and "Sheet by sheet" in t, "About shows the waiting list and the workbook analysis")
         pg.click('#tabs [data-tab="yearend"]'); pg.fill(".cc[data-d='50000']", "2"); check("100,000" in pg.inner_text("#cc50000"), "cash count adds up a banknote")
+        # 1.4 – pills, folding, names first, help, present, PDF, amounts
+        pg.click('#tabs [data-tab="members"]'); pg.click("#mpills [data-sel='K002']")
+        check(pg.locator("#memberView").count() == 1 and pg.locator("#mpills [aria-pressed='true']").count() == 1, "members: one pill shows that member on the same page")
+        pg.click("#mpills [data-sel='K003']"); check(pg.locator(".cmp .card").count() == 2 and pg.locator("svg.chart").count() == 2, "members: two pills compare side by side")
+        labels = pg.evaluate("[...document.querySelectorAll('svg.chart text.ax')].map(t => t.textContent)"); check("Brian" in labels and "K002" not in labels, "charts show short names, not codes")
+        pg.click("#mpills [data-sel='']"); check(pg.locator("#memberView").count() == 0 and "Committee" in pg.inner_text("#main"), "All members brings the overview back")
+        pg.click('#tabs [data-tab="receipts"]'); check(pg.locator("tr.mhead").count() >= 9 and pg.locator("#rcTotals").count() == 1, "receipts: every member folded to one line, totals at the bottom")
+        rows0 = pg.locator(".rctable tbody.rcblock tr").count(); pg.click("#rcToggle"); rows1 = pg.locator(".rctable tbody.rcblock tr").count()
+        check(rows1 > rows0 * 5, f"Expand all opens every member ({rows0} → {rows1} rows)")
+        pg.click("#rcToggle"); pg.locator("tr.mhead").first.click(); check(pg.locator(".rctable tbody.rcblock tr").count() == rows0 + 8, "clicking a member's line opens only that member")
+        pg.click("#mpills [data-sel='K001']"); check(pg.locator("#rcTotals").count() == 0 and pg.locator("tr.mhead").count() == 1, "receipts: one pill shows only that member, no group totals")
+        pg.click("#mpills [data-sel='K002']"); check("Selected members – total" in pg.inner_text("#main"), "receipts: two pills add a selected-members total")
+        pg.click("#mpills [data-sel='']")
+        pg.click('#tabs [data-tab="home"]'); check(pg.locator("#main table th").first.inner_text() in ("Objective", "Project / activity", "Member"), "tables start with the name, not the code")
+        check(pg.locator("#main .code").count() > 10, "codes are shown as pills")
+        check("All amounts in UGX" in pg.inner_text("#main") and "UGX 24" not in pg.inner_text(".kpis"), "amounts as plain numbers with one 'All amounts in UGX' line")
+        pg.click("#helpPill"); check(pg.locator("#helpCard").is_visible() and "Help – Home" in pg.inner_text("#helpCard"), "the ? opens help for the page")
+        pg.fill("#hlpQ", "backup"); check("Make a backup" in pg.inner_text("#helpCard"), "help search finds other pages' help")
+        pg.keyboard.press("Escape"); check(not pg.locator("#helpCard").is_visible(), "Esc closes help")
+        tabs = pg.evaluate("TABS.map(t => t[0])"); nohelp = pg.evaluate("TABS.map(t => t[0]).filter(t => !HELP[t])"); check(not nohelp, f"every page in the menu has help {nohelp}")
+        bad = []
+        for t, sel in pg.evaluate("Object.entries(HELP).flatMap(([t, x]) => x.items.filter(i => i.show).map(i => [t, i.show]))"):
+            pg.evaluate(f"go({t!r})"); pg.wait_for_timeout(30)
+            if not pg.evaluate(f"!!document.querySelector({sel!r})"): bad.append(f"{t}:{sel}")
+        check(not bad, f"every help Show me points at something {bad}")
+        pg.evaluate("go('home')"); pg.click("#presentBtn"); check(pg.locator("#present").is_visible() and pg.evaluate("pres.slides.length") >= 7, "▶ Present opens the slides")
+        pg.keyboard.press("ArrowRight"); check("2 /" in pg.inner_text(".presbar"), "arrow keys move the slides"); pg.keyboard.press("Escape"); check(not pg.locator("#present").is_visible(), "Esc stops presenting")
+        pg.evaluate("window.print = () => { window.__printed = (window.__printed || 0) + 1; }; 0")
+        pg.click('#tabs [data-tab="updates"]'); pg.click("#pdfUpdate"); pg.wait_for_timeout(250)
+        check(pg.evaluate("window.__printed") == 1 and pg.locator("#printArea svg.chart").count() == 2, "Save as PDF prints the update with its charts")
+        pg.evaluate("document.body.classList.remove('printarea')")
+        pg.click('#tabs [data-tab="history"]'); check("Fund statement 2026-09" in pg.inner_text("#main") and pg.locator("tr.flag").count() == 1, "History lists changes and flags one in a closed month")
+        pg.click('#tabs [data-tab="about"]'); check("How KAM is built" in pg.inner_text("#main") and pg.locator("#tryCard").count() == 1, "About has How KAM is built and the Try list")
+        bad = []
+        for x in pg.evaluate("(APP.tries[APP.version] || [])"):
+            pg.evaluate(f"go({x['tab']!r})"); pg.wait_for_timeout(30)
+            if not pg.evaluate(f"!!document.querySelector({x['show']!r})"): bad.append(x["show"])
+        check(not bad and pg.evaluate("(APP.tries[APP.version] || []).length") >= 5, f"every Try step points at something {bad}")
         pg.click('#tabs [data-tab="home"]'); check(pg.locator("#followup").count() == 1 and "Follow up" in pg.inner_text("#followup"), "home: Follow up list")
         check(pg.locator('#tabs [data-tab="home"] .pill').count() == 1, "home tab shows the follow-up count")
         pg.locator("#followup [data-act]").first.click(); check(pg.inner_text("#main") != "", "a follow-up 'fix' link opens something")
@@ -143,12 +183,46 @@ def main():
         before = pg.evaluate(COUNT, "transactions/2026")
         pg.click('#tabs [data-tab="receipts"]'); pg.click("[data-pay]")
         pg.select_option("#f_member", index=1); pg.fill("#f_amount", "130000"); pg.fill("#f_date", "2026-11-01"); pg.click("#edSave")
-        pg.wait_for_selector(".banner.ok")
+        pg.wait_for_selector("text=Email receipt", timeout=8000)
+        check("Email receipt" in pg.inner_text("#main") and "WhatsApp receipt" in pg.inner_text("#main"), "after a payment the admin can send a receipt")
         after = poll(pg, before + 1); check(after == before + 1, f"recording a payment writes one note ({before} → {after})")
         pg.click("[data-round]"); pg.fill("#roundMonth", "2026-11"); pg.dispatch_event("#roundMonth", "change"); pg.wait_for_timeout(100)
         ins = pg.locator(".rin[data-k='savings']"); ins.nth(1).fill("50000"); ins.nth(2).fill("60000"); pg.click("#roundSave"); pg.wait_for_selector(".banner.ok")
         check(poll(pg, before + 3) == before + 3, "the monthly round writes one note per amount")
+        # history logs every write; delete goes to the archive; restore
+        check(pg.evaluate(COUNT, "history/" + __import__("datetime").date.today().strftime("%Y")) >= 1, "History is written to the data folder")
+        pg.click('#tabs [data-tab="history"]'); check("Created" in pg.inner_text("#main") and "Savings" in pg.inner_text("#main"), "History shows the new payments")
+        pg.evaluate("go('members', { sel: ['K002'] })"); pg.locator("#memberView [data-edit*='transactions/2026/2026-11-01']").first.click()
+        pg.once("dialog", lambda d: d.accept()); pg.click("#edDelete"); pg.wait_for_selector(".banner.ok")
+        check(poll(pg, 1, "archive/deleted/transactions/2026") == 1, "a deleted payment moves to the archive")
+        pg.click('#tabs [data-tab="settings"]'); check("Deleted notes (1)" in pg.inner_text("#main"), "Settings lists the deleted note")
+        pg.click("[data-restore]"); pg.wait_for_selector(".banner.ok"); check(poll(pg, 0, "archive/deleted/transactions/2026") == 0, "Restore puts it back")
+        # close a month, then a change there asks first
+        pg.click('#tabs [data-tab="receipts"]')
+        if pg.locator("#closeMonth[data-close]").get_attribute("data-close"):
+            pg.click("#closeMonth"); pg.click("#doClose"); pg.wait_for_function("!document.getElementById('dlg').open")
+        mk = pg.evaluate("[...closedMonths()].sort().at(-1)")
+        asked = []
+        pg.once("dialog", lambda d: (asked.append(d.message), d.dismiss()))
+        pg.evaluate(f"openEditor('transaction', null, {{ date: '{mk}-05', member: mLink('K001'), kind: 'savings', amount: 1000 }})"); pg.click("#edSave"); pg.wait_for_timeout(200)
+        check(asked and "closed" in asked[0], "a payment in a closed month asks first")
+        pg.evaluate("document.getElementById('dlg').close()")
+        # amounts setting, Excel export, backup
+        pg.click('#tabs [data-tab="settings"]'); pg.select_option("#amountMode", "USh"); pg.wait_for_selector(".banner.ok")
+        pg.click('#tabs [data-tab="home"]'); check("USh " in pg.inner_text(".kpis"), "amounts can be shown with USh")
         pg.click('#tabs [data-tab="settings"]')
+        with pg.expect_download() as dl:
+            pg.click("#exportXlsx")
+        import openpyxl
+        dl.value.save_as("/tmp/kam-export-test.xlsx"); wbx = openpyxl.load_workbook("/tmp/kam-export-test.xlsx")
+        check({"Members", "Payments", "Fund", "Loans", "Interest shares", "Receipts 2026", "Projects"} <= set(wbx.sheetnames), f"Excel export has the sheets {wbx.sheetnames[:6]}")
+        check(wbx["Payments"].max_row > 150 and isinstance(wbx["Payments"]["E2"].value, (int, float)), "Excel: every payment, amounts as numbers")
+        with pg.expect_download() as dl:
+            pg.click("#backupBtn")
+        check(dl.value.suggested_filename.startswith("KAM-backup-"), "Download backup gives a backup zip")
+        try: pg.wait_for_function("db.settings.last_backup === new Date().toISOString().slice(0, 10)", timeout=5000)
+        except Exception: pass
+        check(pg.evaluate("db.settings.last_backup") == __import__("datetime").date.today().isoformat(), "the backup date is remembered")
         with pg.expect_download() as dl:
             pg.click("#handover")
         path = dl.value.path()
@@ -157,6 +231,14 @@ def main():
         names = z.namelist()
         check("KAM.html" in names and "Handover summary.txt" in names and any(n.startswith("KAM-data/members/") for n in names), f"handover zip holds app, summary and data ({len(names)} files)")
         check(z.read("KAM.html").decode()[:15] == "<!DOCTYPE html>", "the app in the zip is a whole HTML page")
+        # an older data folder: the update button, and What's new after a new version
+        old = dict(files); old["kam-settings.md"] = old["kam-settings.md"].replace("structure_version: 2\n", "").replace("amount_display: numbers\n", "")
+        pg = ctx.new_page(); pg.add_init_script(PICKER); pg.add_init_script("try { localStorage.setItem('kam-seen-version', '1.3'); } catch {}"); pg.goto(url)
+        pg.evaluate(POPULATE, old); pg.evaluate("localStorage.setItem('kam-seen-version', '1.3')"); pg.reload(); pg.wait_for_selector("#tabs button")
+        check(pg.locator("#dlg[open]").count() == 1 and "What's new in KAM" in pg.inner_text("#dlgBody"), "What's new opens after a new version")
+        pg.click("#dlgCancel"); check(pg.locator("#structBanner").count() == 1, "an older data folder is offered an update")
+        pg.click("#structUpdate"); pg.wait_for_selector(".banner.ok")
+        check(pg.evaluate("db.settings.structure_version") == "2" and pg.evaluate("db.settings.amount_display") == "numbers" and pg.locator("#structBanner").count() == 0, "the update adds the settings, nothing else changes")
         b.close()
     srv.shutdown()
     print("ALL PASSED" if not failures else f"{len(failures)} FAILED")

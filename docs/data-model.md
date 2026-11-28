@@ -23,8 +23,8 @@ KAM-data/
 
 | type | Properties | Notes |
 | --- | --- | --- |
-| settings | sacco_name, currency, fund_name, interest_rule, loan_rate, loan_max_months, default_fee, registration_fee, target_YYYY (one per year), vision, highlights (list), agenda (list "item \| responsible"), banknotes (list), admin, admin_year | One per folder |
-| member | code, title (name), status (active / paused / left / prospective), joined, role, country, city, timezone (e.g. Africa/Kampala), email, phone, monthly_target, annual_target, workbook_interest_YYYY | workbook_interest_YYYY keeps the interest the workbook showed, for comparison |
+| settings | sacco_name, currency, amount_display (numbers / code / USh / slash; 1.4), structure_version, last_backup, appdev, dev_email, fund_name, interest_rule, loan_rate, loan_max_months, default_fee, registration_fee, target_YYYY (one per year), vision, highlights (list), agenda (list "item \| responsible"), banknotes (list), admin, admin_year | One per folder |
+| member | code, title (name), short_name (charts and pills; 1.4), status (active / paused / left / prospective), joined, role, country, city, timezone (e.g. Africa/Kampala), email, phone, monthly_target, annual_target, workbook_interest_YYYY | workbook_interest_YYYY keeps the interest the workbook showed, for comparison |
 | transaction | date, member (link), kind, amount, loan (link), project (link), reference, source | kind: savings, withdrawal, membership, welfare, penalty, loan_interest, loan_repayment, investment_return, other_income, expense. One note per payment |
 | loan | code, member, guarantor, applied, approved, paid_out, amount, rate (0.05), months (4), purpose, status | Repayments and interest are transactions linked to the loan |
 | fund | month, deposits, withdrawals, interest, source, opening (true for the balance brought forward) | One per month, from the fund statement |
@@ -37,6 +37,10 @@ KAM-data/
 | year | year, pool, decided, basis, dividends (list) | The year-end record |
 | cashcount | date, n50000, n20000, … (number of notes) | |
 | update | date, title, month, recipients (list) | Body: the text sent |
+| history | month, title | One per month in `history/<year>/`; the body holds one line per change: when · who · what happened · the note's path. Written by the app after every save (1.4) |
+| close | month, closed, by | One per closed month in `closed months/` (1.4) |
+| devnote | date, title, kind, page, status (new/sent/done), sent | AppDev comments; the body is the comment |
+| report | title | The import report, made by the import |
 
 ## From the workbook
 
@@ -57,6 +61,14 @@ KAM-data/
 | Expenses | funding notes and expense transactions |
 | Investment / Tech / other plans | plan notes (text as written) |
 | Hidden 2021 sheets | Not imported; the workbook stays in the archive as it is |
+
+## Deleted notes (1.4)
+
+Deleting a note moves it to `archive/deleted/<its old path>` with the properties `deleted` (when) and `deleted_from` (where it was). The app ignores notes there except to list them under Settings › Deleted notes, where *Restore* puts them back.
+
+## Data folder updates (1.4)
+
+`structure_version` in the settings says which version of the folder layout the data folder has. When a new KAM needs something new (a setting, a folder), it offers *Update the data folder*: it adds only what is missing and never changes existing notes.
 
 ## The import
 

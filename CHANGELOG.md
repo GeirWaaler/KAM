@@ -1,5 +1,32 @@
 # What's new
 
+### KAM 1.4 – pills, help, Present, History and a way back to Excel · 2026-11-28
+
+- **Members**: click a member's pill to see their statement on the same page; click several to compare them side by side. All members shows everyone.
+- **Receipts**: the same pills – one member shows only their rows; All members shows every member folded to one line (click to open, or Expand all / Collapse all) with the group totals at the bottom.
+- **Names first**: tables start with the name; the code follows as a small pill. An objective's projects show by name.
+- **Short names** in the charts and the pills – set a member's short name under Members › Edit.
+- **How amounts are shown** (Settings): plain numbers, UGX, USh or 1,300,000/=. Plain numbers is the default, with one line "All amounts in UGX".
+- **Help**: the ? in the bottom right corner (or F1) explains the page you're on, with Show me, and searches every page's help.
+- **▶ Present** on Home: the financial position as slides for the monthly meeting.
+- **History**: every change saved – who, what and when.
+- **Close the month** on Receipts: later changes in a closed month ask first and are flagged in History.
+- **Receipts to members**: after a payment is recorded, send a receipt by email or WhatsApp.
+- **Deleted notes are kept** in the archive and can be restored under Settings.
+- **Backups**: Settings › Download backup; Follow up reminds you when the last one is over a month old.
+- **Export to Excel** (Settings) and **Save as PDF** for the monthly update and a member's statement.
+- **How KAM is built** is now also under About.
+- **Data folder update**: when a new version needs something new in the data folder, a button adds it – nothing already there is changed.
+
+**Try:**
+- [ ] Click your own pill on Members – your statement opens on the same page <!-- show: #mpills; tab: members -->
+- [ ] On Receipts, press Collapse all, then click one member's line to open it <!-- show: #rcToggle; tab: receipts -->
+- [ ] Press the ? in the corner and search for "backup" <!-- show: #helpPill; tab: home -->
+- [ ] Press ▶ Present on Home and move through the slides with the arrow keys <!-- show: #presentBtn; tab: home -->
+- [ ] Choose how amounts are shown under Settings <!-- show: #amountMode; tab: settings -->
+- [ ] Download a backup, then look at History – the change is listed <!-- show: #backupBtn; tab: settings -->
+- [ ] Export to Excel and open the file <!-- show: #exportXlsx; tab: settings -->
+
 ### KAM 1.3 – a logo · 2026-11-28
 
 - The welcome page no longer shows empty month and year boxes.

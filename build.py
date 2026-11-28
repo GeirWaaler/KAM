@@ -17,9 +17,9 @@ import urllib.parse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.3"
+VERSION = "1.4"
 VERSION_DATE = "2026-11-28"
-PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "main.js"]
+PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "features.js", "main.js"]
 
 
 def read(*p):
@@ -30,6 +30,34 @@ def read(*p):
 def section(text, heading):
     m = re.search(rf"^## {re.escape(heading)}[^\n]*\n(.*?)(?=^## |\Z)", text, re.S | re.M)
     return m.group(1).strip() if m else ""
+
+
+def version_sections(text):
+    """{version: section text} from the CHANGELOG headings '### KAM x.y – title · date'."""
+    parts = re.split(r"^### KAM ([0-9.]+)[^\n]*\n", text, flags=re.M)
+    return {parts[i]: parts[i + 1] for i in range(1, len(parts) - 1, 2)}
+
+
+def latest_section(text):
+    sec = version_sections(text).get(VERSION, "")
+    return re.sub(r"\*\*Try:\*\*.*", "", sec, flags=re.S).strip()
+
+
+def tries(text):
+    """The Try checklist of each version: '- [ ] what to do <!-- show: #selector; tab: page -->'."""
+    out = {}
+    for v, sec in version_sections(text).items():
+        m = re.search(r"\*\*Try:\*\*(.*)", sec, flags=re.S)
+        if not m:
+            continue
+        items = []
+        for line in m.group(1).splitlines():
+            t = re.match(r"\s*- \[ \] (.*?)\s*(?:<!--(.*?)-->)?\s*$", line)
+            if t:
+                opts = dict(kv.split(":", 1) for kv in (t.group(2) or "").split(";") if ":" in kv)
+                items.append({"text": t.group(1).strip(), "show": opts.get(" show", opts.get("show", "")).strip(), "tab": opts.get(" tab", opts.get("tab", "")).strip()})
+        out[v] = items
+    return out
 
 
 def demo_files():
@@ -52,7 +80,9 @@ def main():
         "analysis": analysis,
         "datamodel": re.sub(r"^# [^\n]*\n", "", read("docs", "data-model.md"), count=1).strip(),
         "structure": re.sub(r"^# [^\n]*\n", "", read("docs", "app-structure.md"), count=1).strip(),
-        "changes": re.sub(r"^# [^\n]*\n", "", read("CHANGELOG.md"), count=1).strip(),
+        "changes": re.sub(r"<!--.*?-->", "", re.sub(r"^# [^\n]*\n", "", read("CHANGELOG.md"), count=1)).strip(),
+        "latest": latest_section(read("CHANGELOG.md")),
+        "tries": tries(read("CHANGELOG.md")),
     }
     js = "const APP = " + json.dumps(app, ensure_ascii=False) + ";\n" + "\n".join(read("app", "src", p) for p in PARTS)
     js = js.replace("</script", "<\\/script")
