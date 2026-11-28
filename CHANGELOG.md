@@ -1,5 +1,9 @@
 # What's new
 
+### KAM 1.2.1 – the menu scrolls with the page · 2026-11-28
+
+- **The menu has no scrollbar of its own any more.** As in Horizons, it is a panel as tall as its items and stays in place while the page scrolls. In a short window it moves up with the page until its last item is in view, then stays there.
+
 ### KAM 1.2 – the menu on the left · 2026-11-28
 
 - **The menu is on the left**, with an icon for every page, grouped: Money, Group, Reporting, Housekeeping – like Horizons.

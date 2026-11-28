@@ -16,7 +16,7 @@ import tempfile
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.2"
+VERSION = "1.2.1"
 VERSION_DATE = "2026-11-28"
 PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "main.js"]
 

@@ -16,19 +16,21 @@ header { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding
 #sacco { font-weight:600; }
 #period { display:flex; gap:6px; align-items:center; margin-left:auto; }
 /* the left-hand menu (as in Horizons): icons, groups, narrow mode remembered per computer; a row on top on narrow screens */
-.frame { display:grid; grid-template-columns:196px minmax(0, 1fr); align-items:start; }
+.frame { display:grid; grid-template-columns:196px minmax(0, 1fr); align-items:start; gap:4px; }
 .frame.mini { grid-template-columns:56px minmax(0, 1fr); }
 .frame.nomenu { grid-template-columns:minmax(0, 1fr); }
 nav.side[hidden] { display:none !important; }
-nav.side { display:flex; flex-direction:column; gap:2px; padding:10px 6px; position:sticky; top:58px; max-height:calc(100vh - 58px); overflow-y:auto; background:var(--card); border-right:1px solid var(--line); min-height:calc(100vh - 58px); }
-nav.side button { display:flex; flex-wrap:wrap; align-items:center; column-gap:10px; row-gap:0; width:100%; text-align:left; border:0; background:none; padding:7px 9px; border-radius:8px; color:var(--muted); font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+/* no scrollbar of its own (as in Horizons): a panel as tall as its items, pinned while the page scrolls.
+   placeNav() (views.js) sets --navTop: below the header when the menu fits, or higher so its last item stays reachable. */
+nav.side { display:flex; flex-direction:column; gap:1px; padding:8px 6px; margin:10px 0 10px 10px; position:sticky; top:var(--navTop, 68px); background:var(--card); border:1px solid var(--line); border-radius:11px; }
+nav.side button { display:flex; flex-wrap:wrap; align-items:center; column-gap:10px; row-gap:0; width:100%; text-align:left; border:0; background:none; padding:6px 9px; border-radius:8px; color:var(--muted); font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
 nav.side button:hover { background:var(--soft); color:var(--ink); }
 nav.side button.on { background:var(--soft); color:var(--accent); }
 nav.side .ni { width:19px; height:19px; flex:none; }
 nav.side .nsub { flex-basis:100%; padding-left:29px; margin-top:-2px; font-size:11px; font-weight:400; color:var(--muted); }
 nav.side .pill { margin-left:auto; }
-.navgrp { font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:12px 10px 3px; }
-#navToggle { margin-top:10px; border-top:1px solid var(--line) !important; border-radius:0 !important; padding-top:10px !important; }
+.navgrp { font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:9px 10px 2px; }
+#navToggle { margin-top:6px; border-top:1px solid var(--line) !important; border-radius:0 !important; padding-top:8px !important; }
 .frame.mini nav.side .nl, .frame.mini nav.side .nsub, .frame.mini .navgrp span { display:none; }
 .frame.mini .navgrp { padding:0; height:0; border-top:1px solid var(--line); margin:8px 6px 6px; }
 .frame.mini nav.side button { justify-content:center; padding:9px 0; position:relative; }
@@ -37,7 +39,7 @@ nav.side .pill { margin-left:auto; }
 main { padding:16px; max-width:1200px; width:100%; margin:0 auto; min-width:0; }
 @media (max-width:900px) {
   .frame, .frame.mini { grid-template-columns:minmax(0, 1fr); }
-  nav.side { flex-direction:row; flex-wrap:wrap; position:static; min-height:0; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:6px; }
+  nav.side { flex-direction:row; flex-wrap:wrap; position:static; margin:0; border:0; border-radius:0; border-bottom:1px solid var(--line); padding:6px; }
   nav.side button { width:auto; column-gap:6px; padding:6px 9px; }
   .frame.mini nav.side .nl { display:inline; }
   .navgrp, #navToggle, nav.side .nsub { display:none !important; }

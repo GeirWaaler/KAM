@@ -55,7 +55,15 @@ function renderTabs() {
     const on = view.tab === id || (view.tab === "member" && id === "members") || (view.tab === "apply" && id === "loans");
     return `${head}<button data-tab="${id}" class="${on ? "on" : ""}" ${on ? 'aria-current="page"' : ""} title="${esc(label)}: ${esc(TAB_HELP[id])}">${navIcon(id)}<span class="nl">${esc(label)}</span>${id === "home" && nf ? `<span class="pill" title="Things to follow up">${nf}</span>` : ""}${sub ? `<span class="nsub">${esc(sub)}</span>` : ""}</button>`;
   }).join("") + `<button id="navToggle" title="Make the menu narrow (icons only) or wide again – remembered on this computer">${navIcon("toggle")}<span class="nl">${navMini() ? "Wide menu" : "Narrow menu"}</span></button>`;
+  placeNav();
 }
+/* keep the menu pinned below the header; if the window is too short for it, let it scroll with the page so the last item is reachable */
+function placeNav() {
+  const nav = $("tabs"), hd = document.querySelector("header"); if (!nav || nav.hidden) return;
+  const top = hd.offsetHeight + 10, room = window.innerHeight - nav.offsetHeight - 10;
+  document.documentElement.style.setProperty("--navTop", `${Math.min(top, room)}px`);
+}
+window.addEventListener("resize", () => placeNav());
 function go(tab, extra = {}) { Object.assign(view, { tab }, extra); render(); window.scrollTo(0, 0); }
 function render() {
   if (!db) return;
