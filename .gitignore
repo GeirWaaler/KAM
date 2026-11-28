@@ -1,0 +1,9 @@
+# The group's real data never goes into this repository
+*.xlsx
+*.xls
+*.zip
+KAM-data*/
+real-data/
+dist/KAM demo data/
+tests/screenshots/
+__pycache__/
