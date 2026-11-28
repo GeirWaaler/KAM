@@ -32,7 +32,7 @@
 
 ## Waiting to be built
 
-- **Top bar as in Horizons** (agreed 2026-11-28, waiting) – so Arnold recognises it coming from Horizons: the version and date in small grey under the logo (v1.4 · date); the SACCO name next to it; on the right the reporting month, then the data folder chip (folder name · notes · read at time; click to choose another folder) and a ⟳ button to read the folder again. The demo shows in the chip (Demo data · notes · nothing is saved · Leave the demo) instead of the yellow band. Settings keeps its Data folder card; tour and help updated.
+Nothing agreed is waiting.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
@@ -70,6 +70,7 @@ Defaults are used until answered.
 - **KAM 1.2** (2026-11-28): the menu on the left with an icon per page, grouped (Money, Group, Reporting, Housekeeping), Narrow/Wide menu remembered per computer, a row on top on phones.
 - **KAM 1.3** (2026-11-28): the logo and favicon – rising coin stacks with an upward arrow in the Ugandan flag colours (`app/src/logo.svg`).
 - **KAM 1.4** (2026-11-28): how amounts are shown; short names on chart axes; member pills on Members (one member, or side by side); member pills and folding on Receipts; name first, code as a pill; Help (? and F1); Export to Excel and Save as PDF; How KAM is built in About; What's new pop-up with Try list; ▶ Present; one-click data folder updates; History; archive instead of delete; close the month; receipts to members; backup and reminder.
+- **KAM 1.5** (2026-11-28): the top bar as in Horizons (version under the logo, data folder chip with ⟳ on the right, demo in the chip); test mode as in Horizons (line after an update, step-by-step panel, ✗ Doesn't → AppDev comment, Settings › Test mode, ticks in About › What's new); "Send to the developer" instead of a name.
 
 ## Status
 

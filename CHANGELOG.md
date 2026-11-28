@@ -1,5 +1,20 @@
 # What's new
 
+### KAM 1.5 – the Horizons top bar, and test mode · 2026-11-28
+
+- **The top bar works as in Horizons**: the version and date sit under the logo; the data folder is on the right – its name, how many notes, when it was read – with ⟳ to read it again. Click the folder name to choose another. The demo shows there too, instead of the yellow band.
+- **Test mode**: after an update a line at the top says how many new things the version has – **Test them** opens a small panel that guides you one step at a time. **Show me** points it out, **✓ Works** ticks it off, **✗ Doesn't** opens an AppDev comment with the step filled in.
+- **Settings › Test mode**: switch the offer off, or test any version again – each shows how far you got (kept on this computer).
+- **About › What's new** shows each version's steps with your ticks.
+- AppDev says **Send to the developer**.
+
+**Try:**
+- [ ] Look under the logo – the version and date of this app <!-- show: #appVersion; tab: home -->
+- [ ] On the right of the top bar: your data folder, its notes and when it was read – press ⟳ to read it again <!-- show: #refreshBtn; tab: home -->
+- [ ] Settings › Test mode lists the versions and how far you got <!-- show: #testModeCard; tab: settings -->
+- [ ] About › What's new shows each version's steps with your ticks <!-- show: #whatsNew; tab: about -->
+- [ ] In AppDev the button says Send to the developer – only look, there's no need to send anything <!-- show: #devSend; tab: appdev -->
+
 ### KAM 1.4 – pills, help, Present, History and a way back to Excel · 2026-11-28
 
 - **Members**: click a member's pill to see their statement on the same page; click several to compare them side by side. All members shows everyone.
@@ -45,7 +60,7 @@
 ### KAM 1.1 – AppDev, the tour and Follow up · 2026-11-27
 
 - **Follow up** on Home: what needs attention – members behind on savings, membership fees not paid, missing email addresses, overdue loans and unrecorded loan interest, a missing fund statement, data problems, meetings without minutes, unsent AppDev comments, and the year-end in December. The count shows on the Home tab; each item has a **fix** link.
-- **AppDev**: the data model and how KAM is built, and comments for the developer – saved in the data folder and sent with **Send to Geir**. Switch it off under Settings.
+- **AppDev**: the data model and how KAM is built, and comments for the developer – saved in the data folder and sent with **Send to the developer**. Switch it off under Settings.
 - **Getting started tour**: a guided tour of the pages on made-up data, in four chapters. Offered when KAM opens for the first time; start it again from About or Settings.
 - **Import report** under Settings, when the data was imported from the workbook.
 - The handover zip now holds every file in the data folder (also the archived workbook).

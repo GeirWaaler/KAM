@@ -55,7 +55,17 @@ function refreshDb() {
   if (!view.year) { view.year = Number(last.slice(0, 4)); view.month = Number(last.slice(5, 7)); }
   if (!view.divYear) view.divYear = view.year;
   $("sacco").textContent = db.settings.sacco_name || db.settings.title || "";
+  folderChip();
   fillPeriod();
+}
+/* the data folder on the right of the top bar, as the vault in Horizons */
+function folderChip() {
+  const c = $("folderChip"), n = liveNotes().length, t = store.readAt ? `${pad2(store.readAt.getHours())}:${pad2(store.readAt.getMinutes())}` : "";
+  c.hidden = false; $("refreshBtn").hidden = store.demo;
+  c.innerHTML = store.demo ? `<b class="demochip">Demo data</b> · ${n} notes · nothing is saved · <button class="lnk" id="leaveDemo" title="Leave the demo – back to the start page">Leave the demo</button>`
+    : `<button class="lnk plain" id="chipPick" title="The data folder KAM is working in – click to choose another"><b>${esc(store.root ? store.root.name : "")}</b></button> · ${n} notes · read ${t}`;
+  if ($("leaveDemo")) $("leaveDemo").onclick = () => location.reload();
+  if ($("chipPick")) $("chipPick").onclick = () => pickFolder();
 }
 function fillPeriod() {
   const years = [...new Set([...dataYears(db), new Date().getFullYear(), view.year])].sort();
@@ -87,7 +97,7 @@ function render() {
   if (!db) return;
   renderTabs();
   const f = PAGES[view.tab] || PAGES.home;
-  $("main").innerHTML = structureBanner() + f();
+  $("main").innerHTML = structureBanner() + testLine() + f();
   const h1 = $("main").querySelector("h1"), an = amountNote();
   if (h1 && an && !["about", "appdev", "history", "settings", "plans", "meetings"].includes(view.tab)) h1.insertAdjacentHTML("afterend", `<p class="muted small amtnote">${esc(an)}</p>`);
   wire();
@@ -460,11 +470,10 @@ function pageAbout() {
   <p>KAM runs the SACCO's records: members, savings, the fund and its interest, loans, projects, meetings, expenses and the year-end. Every figure is calculated from the payments recorded – nothing is typed into a total.</p>
   <p>The app is this one HTML file. The data is a separate folder of notes (Markdown files) – each year's admin receives both in the handover zip. The data never goes to GitHub.</p>
   <div class="row noprint"><button class="primary" data-tour="1" title="A short guided tour of the pages, on made-up data">Start the tour</button></div></div>
-  ${tryCard(false)}
   <h2>How KAM is built</h2><div class="card md">${mdToHtml(APP.structure)}</div>
   <h2>Waiting to be built</h2><div class="card md">${mdToHtml(APP.waiting)}</div>
   <h2>The workbook analysis</h2><div class="card md">${mdToHtml(APP.analysis)}</div>
-  <h2>What's new</h2><div class="card md">${mdToHtml(APP.changes)}</div>`;
+  <h2 id="whatsNew">What's new</h2>${whatsNewHtml()}`;
 }
 
 /* ---------------------------------------------------------------- Settings */
@@ -473,6 +482,7 @@ function pageSettings() {
   return `<h1>Settings</h1>
   <div class="card"><h2 style="margin-top:0">Data folder</h2><p>${store.demo ? "Demo data (in memory – nothing is saved)." : `Connected: <b>${esc(store.root ? store.root.name : "–")}</b> · ${store.notes.size} notes.`}</p>
   <div class="row"><button id="pickFolder" title="Choose the data folder to work in">Choose another data folder</button><button id="reload" title="Read the data folder again">Read again</button></div></div>
+  ${testModeCard()}
   <div class="card"><h2 style="margin-top:0">Getting started</h2><p>A guided tour of the pages on made-up data – for a new admin.</p><div class="row"><button data-tour="1" title="Start the tour">Start the tour</button></div></div>
   <div class="card"><h2 style="margin-top:0">AppDev</h2><p>The AppDev page explains the data model and how the app is built, and sends comments to the developer${devEmail() ? ` (${esc(devEmail())})` : ""}. It is <b>${appdevOn() ? "on" : "off"}</b>.</p>
   ${s ? `<div class="row"><button id="appdevToggle" title="Show or hide the AppDev page">${appdevOn() ? "Switch AppDev off" : "Switch AppDev on"}</button></div>` : ""}</div>

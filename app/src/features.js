@@ -202,24 +202,72 @@ function showSlide() {
 }
 function stopPresent() { const o = $("present"); if (o) o.hidden = true; try { if (document.fullscreenElement) document.exitFullscreen(); } catch {} }
 
-/* ---------------------------------------------------------------- What's new: the pop-up after a new version, with the Try checklist */
-const tryKey = (v, i) => `kam-try-${v}-${i}`;
-const tryDone = (v, i) => { try { return localStorage.getItem(tryKey(v, i)) === "1"; } catch { return false; } };
-function tryCard(popup) {
-  const t = (APP.tries || {})[APP.version] || []; if (!t.length) return "";
-  return `<div class="card" id="tryCard"><h2 style="margin-top:0">Try what's new in ${APP.version}</h2><p class="muted small">Tick each one off when you've tried it. Something wrong? Write it in AppDev.</p>
-  <ul class="trylist">${t.map((x, i) => `<li><label><input type="checkbox" data-try="${i}" ${tryDone(APP.version, i) ? "checked" : ""}> ${esc(x.text)}</label>${x.show ? ` <button class="lnk" data-tshow="${esc(x.show)}" data-ttab="${esc(x.tab || "")}" title="Point out where this is">Show me</button>` : ""}</li>`).join("")}</ul></div>`;
+/* ---------------------------------------------------------------- test mode (as in Horizons): after an update, try what's new step by step */
+const testKey = (v, i) => `kam-test-${v}-${i}`;
+const lsGet = k => { try { return localStorage.getItem(k) || ""; } catch { return ""; } };
+const lsSet = (k, v) => { try { localStorage.setItem(k, v); } catch {} };
+const testState = (v, i) => lsGet(testKey(v, i));            /* "ok" | "no" | "skip" | "" */
+const testSteps = v => (APP.tries || {})[v] || [];
+const testOfferOn = () => lsGet("kam-test-offer") !== "off";
+const testProgress = v => { const st = testSteps(v); return { done: st.filter((_, i) => testState(v, i)).length, total: st.length, problems: st.filter((_, i) => testState(v, i) === "no").length }; };
+/* called once the data is open: notices an update and offers the test line */
+function noticeUpdate() {
+  const seen = lsGet("kam-seen-version"); lsSet("kam-seen-version", APP.version);
+  if (seen && seen !== APP.version && testSteps(APP.version).length) lsSet("kam-test-pending", APP.version);
 }
-function whatsNewPopup() {
-  let seen = ""; try { seen = localStorage.getItem("kam-seen-version") || ""; localStorage.setItem("kam-seen-version", APP.version); } catch {}
-  if (!seen || seen === APP.version || store.demo) return;
-  $("dlgBody").innerHTML = `<h2 style="margin-top:0">What's new in KAM ${APP.version}</h2><div class="md">${mdToHtml(APP.latest || "")}</div>${tryCard(true)}<div class="row"><button class="primary" id="dlgCancel" title="Close – find this again under About">Close</button></div>`;
-  $("dlg").showModal(); $("dlgCancel").onclick = () => $("dlg").close(); wireTry($("dlgBody"));
+function testLine() {
+  if (!db || store.demo || !testOfferOn() || lsGet("kam-test-pending") !== APP.version) return "";
+  const p = testProgress(APP.version); if (p.done >= p.total) return "";
+  return `<div class="banner noprint" id="testLine"><b>KAM ${APP.version} is here</b> – ${p.total - p.done} new thing${p.total - p.done > 1 ? "s" : ""} to test.
+  <button class="primary" id="testStart" title="A small panel guides you through each new thing, one step at a time">Test them</button> <button id="testWhatsNew" title="Read what changed">What's new</button> <button class="lnk" id="testLater" title="Hide this line – test later under Settings › Test mode">Not now</button></div>`;
 }
-function wireTry(root) {
-  root.querySelectorAll("[data-try]").forEach(el => el.onchange = () => { try { localStorage.setItem(tryKey(APP.version, el.dataset.try), el.checked ? "1" : "0"); } catch {} });
-  root.querySelectorAll("[data-tshow]").forEach(el => el.onclick = () => { if ($("dlg").open) $("dlg").close(); showMe(el.dataset.tshow, el.dataset.ttab); });
+const tst = { v: "", i: -1 };
+function startTest(v) {
+  tst.v = v; const st = testSteps(v); tst.i = Math.max(0, st.findIndex((_, i) => !testState(v, i)));
+  if (st.every((_, i) => testState(v, i))) tst.i = 0;
+  showTestStep();
 }
+function showTestStep() {
+  const st = testSteps(tst.v), s = st[tst.i]; let p = $("testPanel");
+  if (!p) { p = document.createElement("div"); p.id = "testPanel"; document.body.appendChild(p); }
+  if (!s) {
+    const pr = testProgress(tst.v);
+    p.innerHTML = `<b>Thank you!</b> <p style="margin:6px 0 10px">You tried ${pr.done} of ${pr.total} new things in KAM ${esc(tst.v)}${pr.problems ? ` – ${pr.problems} didn't work. Send the comments from AppDev when you're ready.` : "."}</p><div class="row" style="margin:0"><button class="primary" id="tClose2" title="Close the panel">Close</button></div>`;
+    $("tClose2").onclick = closeTest; if (tst.v === APP.version) lsSet("kam-test-pending", ""); render(); return;
+  }
+  const state = testState(tst.v, tst.i);
+  p.innerHTML = `<div class="small muted">Test what's new in KAM ${esc(tst.v)} · step ${tst.i + 1} of ${st.length}${state ? ` · <span class="tag ${state === "ok" ? "ok" : state === "no" ? "bad" : "muted"}">${state === "ok" ? "works" : state === "no" ? "doesn't" : "skipped"}</span>` : ""}</div>
+  <p style="margin:6px 0 10px"><b>${esc(s.text)}</b></p>
+  <div class="row" style="margin:0">${s.show ? `<button id="tShow" title="Point out where this is">Show me</button>` : ""}<button class="primary" id="tOk" title="It works – tick it off">✓ Works</button><button id="tNo" title="It doesn't work – write a comment to the developer">✗ Doesn't</button><button id="tSkip" title="Skip this one for now">Skip</button><button class="lnk" id="tStop" style="margin-left:auto" title="Close – carry on later under Settings › Test mode">Close</button></div>`;
+  if ($("tShow")) $("tShow").onclick = () => showMe(s.show, s.tab);
+  $("tOk").onclick = () => { lsSet(testKey(tst.v, tst.i), "ok"); tst.i++; showTestStep(); };
+  $("tSkip").onclick = () => { lsSet(testKey(tst.v, tst.i), "skip"); tst.i++; showTestStep(); };
+  $("tStop").onclick = closeTest;
+  $("tNo").onclick = () => { lsSet(testKey(tst.v, tst.i), "no"); testProblem(tst.v, s); tst.i++; showTestStep(); };
+}
+function closeTest() { const p = $("testPanel"); if (p) p.remove(); tst.i = -1; if (view.tab === "about" || view.tab === "settings") render(); }
+/* ✗ Doesn't: an AppDev comment with the version and the step filled in (or the text copied when AppDev is off) */
+function testProblem(v, s) {
+  const page = (TABS.find(t => t[0] === s.tab) || [])[1] || "";
+  const text = `KAM ${v} – while testing: "${s.text}"\nWhat happened: `;
+  if (!appdevOn()) { try { navigator.clipboard.writeText(text); } catch {} status("Copied – paste it into an email to the developer and say what happened.", "warn"); return; }
+  go("appdev");
+  $("devTitle").value = `Test ${v}: ${s.text}`.slice(0, 90); $("devKind").value = "Problem"; if (page) $("devPage").value = page;
+  $("devText").value = text; $("devText").focus(); $("devText").setSelectionRange(text.length, text.length);
+  status("Write what happened and press Save comment. The test panel carries on with the next step.", "warn");
+}
+function testModeCard() {
+  const vs = (APP.versions || []).filter(x => testSteps(x.v).length);
+  return `<div class="card" id="testModeCard"><h2 style="margin-top:0">Test mode</h2><p>After an update, KAM offers to guide you through what's new, one step at a time – each step says what to do and what you should see. ✗ Doesn't writes a comment to the developer.</p>
+  <div class="row"><label><input type="checkbox" id="testOffer" ${testOfferOn() ? "checked" : ""}> Offer to test after an update</label></div>
+  ${vs.length ? tbl(["Version", "Tried", ""], vs.map(x => { const p = testProgress(x.v); return tr([`KAM ${esc(x.v)} – ${esc(x.title)}`, `${p.done} of ${p.total}${p.problems ? ` <span class="tag bad">${p.problems} didn't work</span>` : ""}`, `<button class="lnk" data-test="${esc(x.v)}" title="Go through this version's steps">${p.done ? "Test again" : "Test"}</button>`]); })) : ""}</div>`;
+}
+function whatsNewHtml() {
+  const mark = st => st === "ok" ? `<span class="tag ok" title="Works">✓</span>` : st === "no" ? `<span class="tag bad" title="Didn't work">✗</span>` : st === "skip" ? `<span class="tag" title="Skipped">–</span>` : `<span class="tag muted" title="Not tried yet">·</span>`;
+  return (APP.versions || []).map(x => `<div class="card md wn"><h3 style="margin-top:0">KAM ${esc(x.v)} – ${esc(x.title)} <span class="muted small">· ${esc(x.date)}</span></h3>${mdToHtml(x.body)}
+  ${testSteps(x.v).length ? `<p><b>Try:</b> <button class="lnk noprint" data-test="${esc(x.v)}" title="Go through these steps with the test panel">Test these</button></p><ul class="trylist">${testSteps(x.v).map((t, i) => `<li>${mark(testState(x.v, i))} ${esc(t.text)}</li>`).join("")}</ul>` : ""}</div>`).join("");
+}
+
 /* point at something: open its page if needed, outline it for a few seconds */
 function showMe(sel, tab) {
   if (tab && tab !== view.tab) { view.tab = tab; view.loan = ""; view.receiptsKind = "all"; render(); }
@@ -231,6 +279,7 @@ function showMe(sel, tab) {
 const HELP = {
   home: { title: "Home", about: "The group at a glance for the reporting month: what to follow up, the key figures, the graphs and every member against target.", items: [
     { q: "Change the month the figures report on", a: "Pick the month and year at the top right – every page follows.", show: "#period" },
+    { q: "Which data folder am I in, and which version?", a: "The folder is on the right of the top bar (click it to choose another; ⟳ reads it again). The version is under the logo.", show: "#folderChip" },
     { q: "See what needs attention", a: "Follow up lists members behind on savings, overdue loans, a missing fund statement, data problems and more. Each line has a fix link.", show: "#followup" },
     { q: "Show the figures at the monthly meeting", a: "▶ Present plays the financial position as slides. Arrow keys move, Esc stops.", show: "#presentBtn" } ] },
   members: { title: "Members", about: "Everyone in the group. Click a member's pill to see their statement on this page, or several pills to compare them.", items: [
@@ -269,15 +318,17 @@ const HELP = {
   history: { title: "History", about: "Every change saved – who, what and when. It travels with the data folder.", items: [
     { q: "Find a change", a: "Search for a name or a word, or pick a month.", show: "#histQ" } ] },
   appdev: { title: "AppDev", about: "For the admin: how KAM is built, the data model, and comments for the developer.", items: [
-    { q: "Report a problem or an idea", a: "Write it under Comments, then Send to Geir.", show: "#devNew" } ] },
+    { q: "Report a problem or an idea", a: "Write it under Comments, then Send to the developer.", show: "#devNew" } ] },
   settings: { title: "Settings", about: "The data folder, how amounts are shown, backups, the Excel export, the handover and the checks.", items: [
     { q: "Make a backup", a: "Download backup – keep the zip somewhere safe.", show: "#backupBtn" },
     { q: "Get everything into Excel", a: "Export to Excel – one file with every member, payment and total.", show: "#exportXlsx" },
     { q: "Hand over to next year's admin", a: "Download handover zip and send it to them.", show: "#handover" },
     { q: "Show amounts with or without the currency", a: "How amounts are shown.", show: "#amountMode" },
-    { q: "Bring back something deleted", a: "Deleted notes are listed here with Restore (only when there are any)." } ] },
+    { q: "Bring back something deleted", a: "Deleted notes are listed here with Restore (only when there are any)." },
+    { q: "Test what's new in a version", a: "Test mode – go through a version's new things step by step, or switch off the offer after updates.", show: "#testModeCard" } ] },
   about: { title: "About", about: "What KAM is, how it is built, the workbook analysis, what is waiting to be built and what's new.", items: [
-    { q: "Take the tour again", a: "Start the tour – it runs on made-up data.", show: "[data-tour]" } ] },
+    { q: "Take the tour again", a: "Start the tour – it runs on made-up data.", show: "[data-tour]" },
+    { q: "See what changed in each version", a: "What's new – each version with its Try steps and your ticks; Test these goes through them.", show: "#whatsNew" } ] },
 };
 const helpText = it => `${it.q} ${it.a}`.toLowerCase();
 function openHelp(q = "") {

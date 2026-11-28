@@ -58,7 +58,7 @@ function pageAppdev() {
   <div class="row"><button class="primary" id="devNew" title="Save the comment in the data folder">Save comment</button></div>
   <h3>Comments (${notes.length}, ${unsent.length} not sent)</h3>
   ${notes.length ? tbl(["Date", "Kind", "Page", "Subject", "Status", ""], notes.map(d => tr([esc(d.date), esc(d.kind), esc(d.page), esc(d.title), `<span class="tag ${d.status === "done" ? "ok" : d.status === "sent" ? "muted" : "warn"}">${esc(d.status || "new")}</span>`, `<button class="lnk" data-edit="${esc(d.note.path)}" title="Open the comment">Open</button>`]))) : `<p class="muted">No comments yet.</p>`}
-  <div class="row"><button class="primary" id="devSend" ${unsent.length ? "" : "disabled"} title="${devEmail() ? "Opens an email to the developer with the comments not yet sent" : "Add the developer's email under Settings first"}">Send to Geir (${unsent.length})</button>
+  <div class="row"><button class="primary" id="devSend" ${unsent.length ? "" : "disabled"} title="${devEmail() ? "Opens an email to the developer with the comments not yet sent" : "Add the developer's email under Settings first"}">Send to the developer (${unsent.length})</button>
   <button id="devCopy" ${unsent.length ? "" : "disabled"} title="Copy the comments as text – paste them into an email if the button above doesn't work">Copy the comments</button>
   ${devEmail() ? "" : `<span class="warn small">No developer email in Settings yet.</span>`}</div><div id="devAfter"></div></div>
   <h2>How KAM is built</h2><div class="card md">${mdToHtml(APP.structure)}</div>
@@ -72,6 +72,7 @@ function devMailText(list) {
 /* ---------------------------------------------------------------- the onboarding tour (runs on the demo data) */
 const TOUR = [
   { ch: "Finding your way", tab: "home", sel: "#tabs", title: "The menu", text: "The menu on the left holds every page, grouped: Money, Group, Reporting and Housekeeping. Narrow menu at the bottom shrinks it to icons." },
+  { ch: "Finding your way", tab: "home", sel: "#folderChip", title: "Data folder and version", text: "As in Horizons: the data folder is on the right of the top bar – click it to choose another, ⟳ reads it again. The version of the app is under the logo." },
   { ch: "Finding your way", tab: "home", sel: "#period", title: "Reporting month", text: "Pick the month to report on. The dashboards, statements and targets all follow it." },
   { ch: "Finding your way", tab: "home", sel: ".kpis", title: "Key figures", text: "Every number is added up from the payments recorded – nothing is typed into a total." },
   { ch: "Finding your way", tab: "home", sel: "#helpPill", title: "Help", text: "The ? in the corner (or F1) explains the page you're on, with Show me – and searches the help for every page." },
@@ -89,6 +90,7 @@ const TOUR = [
   { ch: "Reporting and year-end", tab: "updates", sel: "#copyMail", title: "The monthly update", text: "Copy the update, open the email with every member in BCC, paste – and post the short version in the WhatsApp group. Save as PDF makes a document to attach." },
   { ch: "Reporting and year-end", tab: "yearend", sel: "#divYear", title: "Year-end", text: "The dividend calculation and share-out list, and the cash count." },
   { ch: "Reporting and year-end", tab: "history", sel: "#histQ", title: "History", text: "Every change saved – who, what and when – kept in the data folder." },
+  { ch: "Reporting and year-end", tab: "settings", sel: "#testModeCard", title: "Test mode", text: "After each update, KAM offers to guide you through what's new step by step. ✗ Doesn't writes a comment to the developer." },
   { ch: "Reporting and year-end", tab: "settings", sel: "#backupBtn", title: "Backup and Excel", text: "Download a backup now and then (Follow up reminds you). Export to Excel gives everything as a spreadsheet, if ever needed." },
   { ch: "Reporting and year-end", tab: "appdev", sel: "#devNew", title: "AppDev", text: "Ideas or problems with the app? Write them here and send them to the developer.", when: () => appdevOn() },
   { ch: "Reporting and year-end", tab: "settings", sel: "#handover", title: "The handover", text: "At the end of your year, download the handover zip and send it to the next admin. That's the tour – press Finish, then Leave the demo to work in your own data." },

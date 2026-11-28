@@ -14,10 +14,16 @@
 [hidden] { display:none !important; } .pill:empty { display:none; }
 body { margin:0; font:15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; background:var(--bg); color:var(--ink); }
 header { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding:10px 16px; background:var(--card); border-bottom:1px solid var(--line); position:sticky; top:0; z-index:5; }
-.brand { display:inline-flex; align-items:center; gap:8px; font-weight:800; letter-spacing:.06em; font-size:17px; } .brand svg { width:30px; height:30px; display:block; }
-.welcome .brand svg { width:64px; height:64px; } .welcome .brand { font-size:26px; gap:14px; margin-bottom:8px; }
+/* the top bar as in Horizons (1.5): version under the logo, the data folder on the right */
+.brand { display:inline-flex; align-items:center; gap:9px; } .brand svg { width:34px; height:34px; display:block; flex:none; }
+.brand .bname { font-weight:800; letter-spacing:.06em; font-size:17px; line-height:1.1; } .brand .ver { font-size:11px; color:var(--muted); }
+header .tools { display:flex; flex-wrap:wrap; align-items:center; gap:8px 12px; margin-left:auto; }
+.chipline { font-size:12.5px; color:var(--muted); border:1px solid var(--line); border-radius:999px; padding:3px 10px; background:var(--bg); white-space:nowrap; }
+.chipline b { color:var(--ink); } .chipline .demochip { color:var(--warn); }
+#refreshBtn { padding:3px 9px; }
+.welcome .brand svg { width:64px; height:64px; } .welcome .brand { font-size:26px; font-weight:800; letter-spacing:.06em; gap:14px; margin-bottom:8px; }
 #sacco { font-weight:600; }
-#period { display:flex; gap:6px; align-items:center; margin-left:auto; }
+#period { display:flex; gap:6px; align-items:center; }
 /* the left-hand menu (as in Horizons): icons, groups, narrow mode remembered per computer; a row on top on narrow screens */
 .frame { display:grid; grid-template-columns:196px minmax(0, 1fr); align-items:start; gap:4px; }
 .frame.mini { grid-template-columns:56px minmax(0, 1fr); }
@@ -105,6 +111,8 @@ tr.flag td { background:var(--hl); } svg.lock { vertical-align:-1px; }
 #helpCard { position:fixed; right:18px; bottom:72px; width:min(400px, calc(100vw - 36px)); max-height:min(70vh, 600px); overflow:auto; background:var(--card); border:1px solid var(--line); border-radius:12px; padding:12px 14px; box-shadow:0 6px 24px rgba(0,0,0,.25); z-index:16; }
 .hlp-it { border-top:1px solid var(--line); padding:6px 0; } .hlp-it summary { cursor:pointer; font-weight:600; } .hlp-it p { margin:6px 0; }
 #tourPanel { right:76px !important; }
+#testPanel { position:fixed; left:50%; transform:translateX(-50%); bottom:16px; width:min(560px, calc(100vw - 120px)); background:var(--card); border:2px solid var(--c2); border-radius:12px; padding:12px 14px; box-shadow:0 6px 24px rgba(0,0,0,.25); z-index:21; }
+@media print { #testPanel { display:none !important; } }
 #present { position:fixed; inset:0; background:var(--bg); z-index:50; overflow:auto; padding:28px 40px 70px; }
 #present .slide { max-width:1100px; margin:0 auto; font-size:18px; } #present .slide.title { text-align:center; padding-top:12vh; } #present .slide.title svg { width:110px; height:110px; }
 #present svg.chart { max-width:none !important; } #present .chartbox figcaption { font-size:20px; }
@@ -115,19 +123,21 @@ tr.flag td { background:var(--hl); } svg.lock { vertical-align:-1px; }
 @media print { body.printarea > *:not(#printArea) { display:none !important; } body.printarea #printArea { display:block !important; } #helpPill, #helpCard, #present { display:none !important; } }
 #tourPanel { position:fixed; right:16px; bottom:16px; width:min(380px, calc(100vw - 32px)); background:var(--card); border:2px solid var(--accent); border-radius:12px; padding:12px 14px; box-shadow:0 6px 24px rgba(0,0,0,.25); z-index:20; }
 .tourhl { outline:3px solid var(--c2) !important; outline-offset:3px; border-radius:6px; }
-@media (max-width:560px) { main { padding:10px; } .form { grid-template-columns:1fr; } header { padding:8px 10px; } #period { margin-left:0; } }
+@media (max-width:560px) { main { padding:10px; } .form { grid-template-columns:1fr; } header { padding:8px 10px; } header .tools { margin-left:0; } .chipline { white-space:normal; } }
 @media print { .frame, .frame.mini { display:block; } header, nav, .noprint, .demo-band { display:none !important; } body { background:#fff; color:#000; } .card { border:0; padding:0; } .print-only { display:block; } main { max-width:none; } }
 </style>
 </head>
 <body>
-<div id="demoBand" class="demo-band" hidden>Demo data – made-up members and amounts. Nothing is saved. <button class="lnk" id="leaveDemo" title="Go back to the start page">Leave the demo</button></div>
 <header>
-  <span class="brand" title="KAM">/*__LOGO__*/<span>KAM</span></span><span id="sacco"></span>
-  <span id="folderChip" class="pill"></span>
+  <div class="brand">/*__LOGO__*/<div><div class="bname">KAM</div><div class="ver" id="appVersion" title="The version of this app file and the date it was released"></div></div></div><span id="sacco"></span>
+  <div class="tools">
   <div id="period" hidden>
     <label class="muted small" for="repYear">Reporting month</label>
     <select id="repMonth" title="The month the dashboards and statements report on"></select>
     <select id="repYear" title="The year the dashboards and statements report on"></select>
+  </div>
+  <span class="chipline" id="folderChip" hidden></span>
+  <button id="refreshBtn" hidden title="Read the data folder again – picks up changes made outside KAM">⟳</button>
   </div>
 </header>
 <div class="frame nomenu" id="frame"><nav id="tabs" class="side" hidden aria-label="Menu"></nav>

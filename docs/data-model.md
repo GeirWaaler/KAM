@@ -1,6 +1,6 @@
 # Data model – for approval
 
-**Status: approved by Geir, 2026-11-27** (walked through part by part). The demo data (`tools/build_sample_data.py`) follows it.
+**Status: approved, 2026-11-27** (walked through part by part). The demo data (`tools/build_sample_data.py`) follows it.
 
 Decisions in the walk-through: no payment method or receiver on payments; amounts in the SACCO's currency only (no foreign-currency fields); money paid out to members from welfare is recorded as an expense on a project; the Project Tracker's sample tasks and the old hidden sheets are not imported.
 
