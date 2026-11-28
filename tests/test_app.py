@@ -94,6 +94,9 @@ def main():
         box = pg.locator("#tabs").bounding_box(); check(box["height"] > 600 and box["width"] < 220, "the menu is a column on the left")
         check(pg.locator("#tabs svg.ni").count() >= 14, "every menu item has an icon")
         check(pg.evaluate("document.querySelector('link[rel=icon]').href.startsWith('data:image/svg+xml')") and pg.locator("header .brand svg").count() == 1, "the logo is the favicon and sits in the header")
+        fav = pg.evaluate("document.querySelector('link[rel=icon]').getAttribute('href')")
+        check("#" not in fav, "favicon data URI has no raw # (it would cut the icon off)")
+        check(pg.evaluate("""h => new Promise(r => { const i = new Image(); i.onload = () => r(i.naturalWidth > 0); i.onerror = () => r(false); i.src = h; })""", fav), "favicon image loads in the browser")
         check(pg.evaluate("(() => { const n = document.getElementById('tabs'); return getComputedStyle(n).overflowY !== 'auto' && n.scrollHeight <= n.clientHeight + 1; })()"), "the menu has no scrollbar of its own")
         pg.set_viewport_size({"width": 1280, "height": 560}); pg.mouse.wheel(0, 5000); pg.wait_for_timeout(200)
         last = pg.locator("#navToggle").bounding_box(); check(last["y"] + last["height"] <= 560, "in a short window the last menu item can be reached by scrolling the page")
@@ -104,7 +107,11 @@ def main():
         check("<h3>Data</h3>" not in pg.inner_html("#followup"), "home: no data problems in Follow up on the demo data")
         pg.click('#tabs [data-tab="interest"]'); check("✓ Interest shares add up" in pg.inner_text("#main"), "interest check passes on demo data"); pg.click('#tabs [data-tab="home"]')
         check(pg.locator("svg.chart").count() == 3, "home: 3 charts (year, quarter, interest by month)")
+        hh = pg.evaluate("[...document.querySelectorAll('.grid2 svg.chart')].map(e => Math.round(e.getBoundingClientRect().height))")
+        check(len(hh) == 2 and len(set(hh)) == 1, f"home: the year and quarter charts are the same height {hh}")
         pg.click('#tabs [data-tab="members"]'); check(pg.locator("svg.chart").count() == 2, "members: 2 charts (contributions, savings vs targets)")
+        hs = pg.evaluate("[...document.querySelectorAll('svg.chart')].map(e => Math.round(e.getBoundingClientRect().height))")
+        check(len(set(hs)) == 1, f"members: the two charts are the same height {hs}")
         pg.click('#tabs [data-tab="loans"]'); pg.click("[data-loan]"); check("Repayment plan" in pg.inner_text("#main"), "loan page shows the repayment plan")
         pg.click("[data-apply]"); check("In words" in pg.inner_text("#main") and "nine hundred thousand" in pg.inner_text("#main"), "loan application with the amount in words")
         pg.click('#tabs [data-tab="projects"]'); check(pg.locator("svg.gantt").count() == 1, "project tracker timeline")
@@ -157,10 +164,12 @@ def main():
         pg.click("#tStop"); check(pg.locator("#testPanel").count() == 0, "the test panel closes")
         check("Send to the developer" in pg.inner_text("#main") and "Geir" not in pg.inner_text("#main"), "AppDev says Send to the developer")
         bad = []
-        for x in pg.evaluate("(APP.tries[APP.version] || [])"):
-            pg.evaluate(f"go({x['tab']!r})"); pg.wait_for_timeout(30)
-            if not pg.evaluate(f"!!document.querySelector({x['show']!r})"): bad.append(x["show"])
-        check(not bad and pg.evaluate("(APP.tries[APP.version] || []).length") >= 5, f"every Try step points at something {bad}")
+        for v, steps in pg.evaluate("APP.tries").items():
+            if len(steps) < 2: bad.append(f"{v}: only {len(steps)} steps")
+            for x in steps:
+                pg.evaluate(f"go({x['tab']!r})"); pg.wait_for_timeout(30)
+                if not pg.evaluate(f"!!document.querySelector({x['show']!r})"): bad.append(f"{v}: {x['show']}")
+        check(not bad and len(pg.evaluate("APP.tries[APP.version] || []")) >= 2, f"every version's Try steps point at something {bad}")
         pg.click('#tabs [data-tab="home"]'); check(pg.locator("#followup").count() == 1 and "Follow up" in pg.inner_text("#followup"), "home: Follow up list")
         check(pg.locator('#tabs [data-tab="home"] .pill').count() == 1, "home tab shows the follow-up count")
         pg.locator("#followup [data-act]").first.click(); check(pg.inner_text("#main") != "", "a follow-up 'fix' link opens something")

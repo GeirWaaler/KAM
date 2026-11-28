@@ -1,5 +1,15 @@
 # What's new
 
+### KAM 1.5.1 – the tab icon, and charts side by side · 2026-11-28
+
+- **The KAM logo shows in the browser tab again.** It was built into the app the wrong way and the browser gave up on it.
+- **Charts side by side are the same height**: on Members, *Total contributions per member* and *Monthly savings and targets*; on Home, the year and quarter charts.
+
+**Try:**
+- [ ] Look at the browser tab – the KAM logo is there (reload the tab if the browser remembers the old blank icon) <!-- show: .brand; tab: home -->
+- [ ] On Members the two charts are the same height <!-- show: .grid2; tab: members -->
+- [ ] On Home the year and quarter charts are the same height <!-- show: .grid2; tab: home -->
+
 ### KAM 1.5 – the Horizons top bar, and test mode · 2026-11-28
 
 - **The top bar works as in Horizons**: the version and date sit under the logo; the data folder is on the right – its name, how many notes, when it was read – with ⟳ to read it again. Click the folder name to choose another. The demo shows there too, instead of the yellow band.

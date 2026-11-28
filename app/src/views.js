@@ -120,6 +120,7 @@ function pageHome() {
   const ya = yearActuals(db, years), qa = quarterActuals(db, view.year, repMonthKey());
   const fm = Array.from({ length: 12 }, (_, i) => { const f = db.fund.find(x => x.month === monthKey(view.year, i + 1) && !x.opening); return f ? f.interest : 0; });
   const projYears = [view.year - 1, view.year];
+  const homeW = Math.max(chartWidth(ya.length, 2), chartWidth(qa.length, 2)); // the pair side by side get the same height
   return `<h1>Dashboard · ${MONTHS_LONG[view.month - 1]} ${view.year}</h1>
   <div class="row noprint"><button class="primary" id="presentBtn" title="Show the financial position as full-screen slides – for the monthly meeting (arrow keys to move, Esc to stop)">▶ Present</button></div>${followUpSection()}
   <div class="kpis">
@@ -136,8 +137,8 @@ function pageHome() {
   </div>
   ${db.settings.vision ? `<div class="card"><b>Vision:</b> ${esc(db.settings.vision)}</div>` : ""}
   <div class="grid2">
-    <div>${barChart({ title: "Actual vs target by year", labels: ya.map(x => String(x.year)), bars: [{ name: "Actual", values: ya.map(x => x.actual) }, { name: "Target", values: ya.map(x => x.target) }] })}</div>
-    <div>${barChart({ title: `Savings vs target by quarter, ${view.year} (cumulative)`, labels: qa.map(x => x.label.slice(5)), bars: [{ name: "Actual", values: qa.map(x => x.actual) }, { name: "Target", values: qa.map(x => x.target) }] })}</div>
+    <div>${barChart({ width: homeW, title: "Actual vs target by year", labels: ya.map(x => String(x.year)), bars: [{ name: "Actual", values: ya.map(x => x.actual) }, { name: "Target", values: ya.map(x => x.target) }] })}</div>
+    <div>${barChart({ width: homeW, title: `Savings vs target by quarter, ${view.year} (cumulative)`, labels: qa.map(x => x.label.slice(5)), bars: [{ name: "Actual", values: qa.map(x => x.actual) }, { name: "Target", values: qa.map(x => x.target) }] })}</div>
   </div>
   <div class="card">${barChart({ title: `Interest earned by month, ${view.year}`, labels: MONTHS, bars: [{ name: "Fund interest", values: fm }] })}</div>
   <h2>Objectives</h2>
@@ -182,10 +183,11 @@ function pageMembers() {
   const list = sel.length ? sel.map(memberByCode) : activeMembers(db);
   const rows = list.map(m => memberRow(db, m, view.year, view.month));
   const labels = rows.map(r => sName(r.code)), tips = rows.map(r => `${r.name} (${r.code})`);
+  const memW = chartWidth(labels.length, 3); // both charts the same width, so the same height
   return head + `${sel.length > 1 ? `<h2>Side by side</h2><div class="cmp">${rows.map(r => { const st = statement(db, alloc, r.code, view.year); return `<div class="card"><b>${memberCell(r.code)}</b><div class="kpis small">${kp(`${view.year} savings`, money(r.yearSavings), "")}${kp("Target to date", money(r.currentTarget), "")}${kp("Gap", money(r.gap), r.insight)}${kp("Risk flag", pillFor(r.risk), "")}${kp("Fund balance", money(st.fundBalance), "")}${kp("Loan outstanding", money(st.outstanding), "")}</div></div>`; }).join("")}</div>` : ""}
   <div class="grid2">
-    <div>${barChart({ title: "Total contributions per member", labels, tips, bars: [{ name: "Registration", values: rows.map(r => r.registration) }, { name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }, { name: "Total savings", values: rows.map(r => r.totalSavings) }], rotate: true })}</div>
-    <div>${barChart({ title: "Monthly savings and targets", labels, tips, bars: [{ name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }], lines: [{ name: "Target to date", values: rows.map(r => r.currentTarget) }, { name: "Annual target", values: rows.map(r => r.annualTarget) }], rotate: true })}</div>
+    <div>${barChart({ width: memW, title: "Total contributions per member", labels, tips, bars: [{ name: "Registration", values: rows.map(r => r.registration) }, { name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }, { name: "Total savings", values: rows.map(r => r.totalSavings) }], rotate: true })}</div>
+    <div>${barChart({ width: memW, title: "Monthly savings and targets", labels, tips, bars: [{ name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }], lines: [{ name: "Target to date", values: rows.map(r => r.currentTarget) }, { name: "Annual target", values: rows.map(r => r.annualTarget) }], rotate: true })}</div>
   </div>
   <h2>Statements ${view.year} (STT)</h2>
   ${tbl(["Member", ["Accumulated savings", "n"], ["Membership", "n"], ["Loan interest received", "n"], ["Loan repayment", "n"], [`Borrowing ${view.year}`, "n"], [`Loan paid ${view.year}`, "n"], ["Loan outstanding", "n"]],

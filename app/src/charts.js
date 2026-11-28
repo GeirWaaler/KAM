@@ -6,8 +6,11 @@ function niceMax(v) { if (v <= 0) return 1; const p = Math.pow(10, Math.floor(Ma
 const short = v => { const a = Math.abs(v); return a >= 1e9 ? (v / 1e9).toFixed(1).replace(/\.0$/, "") + "B" : a >= 1e6 ? (v / 1e6).toFixed(1).replace(/\.0$/, "") + "M" : a >= 1e3 ? Math.round(v / 1e3) + "K" : String(Math.round(v)); };
 
 /* grouped bars (bars: [{name, values}]) with optional lines on top (lines: [{name, values}]) */
-function barChart({ title, labels, tips, bars = [], lines = [], height = 240, rotate = false }) {
-  const W = Math.max(360, labels.length * (bars.length * 16 + 20) + 70), H = height, L = 54, R = 10, T = 14, B = rotate ? 86 : 34;
+// Width a bar chart needs; pass the same width to charts shown side by side so they are the same height.
+function chartWidth(n, nBars) { return Math.max(360, n * (Math.max(1, nBars) * 16 + 20) + 70); }
+
+function barChart({ title, labels, tips, bars = [], lines = [], height = 240, rotate = false, width = 0 }) {
+  const W = width || chartWidth(labels.length, bars.length), H = height, L = 54, R = 10, T = 14, B = rotate ? 86 : 34;
   const all = [...bars, ...lines].flatMap(s => s.values).map(Number).filter(isFinite);
   const max = niceMax(Math.max(0, ...all)), min = Math.min(0, ...all), span = max - min || 1;
   const y = v => T + (H - T - B) * (max - v) / span, gw = (W - L - R) / Math.max(1, labels.length), bw = Math.min(28, (gw - 10) / Math.max(1, bars.length));
