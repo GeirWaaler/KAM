@@ -55,7 +55,17 @@ function refreshDb() {
   if (!view.year) { view.year = Number(last.slice(0, 4)); view.month = Number(last.slice(5, 7)); }
   if (!view.divYear) view.divYear = view.year;
   $("sacco").textContent = db.settings.sacco_name || db.settings.title || "";
+  folderChip();
   fillPeriod();
+}
+/* the data folder on the right of the top bar, as the vault in Horizons */
+function folderChip() {
+  const c = $("folderChip"), n = liveNotes().length, t = store.readAt ? `${pad2(store.readAt.getHours())}:${pad2(store.readAt.getMinutes())}` : "";
+  c.hidden = false; $("refreshBtn").hidden = store.demo;
+  c.innerHTML = store.demo ? `<b class="demochip">Demo data</b> · ${n} notes · nothing is saved · <button class="lnk" id="leaveDemo" title="Leave the demo – back to the start page">Leave the demo</button>`
+    : `<button class="lnk plain" id="chipPick" title="The data folder KAM is working in – click to choose another"><b>${esc(store.root ? store.root.name : "")}</b></button> · ${n} notes · read ${t}`;
+  if ($("leaveDemo")) $("leaveDemo").onclick = () => location.reload();
+  if ($("chipPick")) $("chipPick").onclick = () => pickFolder();
 }
 function fillPeriod() {
   const years = [...new Set([...dataYears(db), new Date().getFullYear(), view.year])].sort();
@@ -87,7 +97,7 @@ function render() {
   if (!db) return;
   renderTabs();
   const f = PAGES[view.tab] || PAGES.home;
-  $("main").innerHTML = structureBanner() + f();
+  $("main").innerHTML = structureBanner() + testLine() + f();
   const h1 = $("main").querySelector("h1"), an = amountNote();
   if (h1 && an && !["about", "appdev", "history", "settings", "plans", "meetings"].includes(view.tab)) h1.insertAdjacentHTML("afterend", `<p class="muted small amtnote">${esc(an)}</p>`);
   wire();
@@ -110,6 +120,7 @@ function pageHome() {
   const ya = yearActuals(db, years), qa = quarterActuals(db, view.year, repMonthKey());
   const fm = Array.from({ length: 12 }, (_, i) => { const f = db.fund.find(x => x.month === monthKey(view.year, i + 1) && !x.opening); return f ? f.interest : 0; });
   const projYears = [view.year - 1, view.year];
+  const homeW = Math.max(chartWidth(ya.length, 2), chartWidth(qa.length, 2)); // the pair side by side get the same height
   return `<h1>Dashboard · ${MONTHS_LONG[view.month - 1]} ${view.year}</h1>
   <div class="row noprint"><button class="primary" id="presentBtn" title="Show the financial position as full-screen slides – for the monthly meeting (arrow keys to move, Esc to stop)">▶ Present</button></div>${followUpSection()}
   <div class="kpis">
@@ -126,8 +137,8 @@ function pageHome() {
   </div>
   ${db.settings.vision ? `<div class="card"><b>Vision:</b> ${esc(db.settings.vision)}</div>` : ""}
   <div class="grid2">
-    <div>${barChart({ title: "Actual vs target by year", labels: ya.map(x => String(x.year)), bars: [{ name: "Actual", values: ya.map(x => x.actual) }, { name: "Target", values: ya.map(x => x.target) }] })}</div>
-    <div>${barChart({ title: `Savings vs target by quarter, ${view.year} (cumulative)`, labels: qa.map(x => x.label.slice(5)), bars: [{ name: "Actual", values: qa.map(x => x.actual) }, { name: "Target", values: qa.map(x => x.target) }] })}</div>
+    <div>${barChart({ width: homeW, title: "Actual vs target by year", labels: ya.map(x => String(x.year)), bars: [{ name: "Actual", values: ya.map(x => x.actual) }, { name: "Target", values: ya.map(x => x.target) }] })}</div>
+    <div>${barChart({ width: homeW, title: `Savings vs target by quarter, ${view.year} (cumulative)`, labels: qa.map(x => x.label.slice(5)), bars: [{ name: "Actual", values: qa.map(x => x.actual) }, { name: "Target", values: qa.map(x => x.target) }] })}</div>
   </div>
   <div class="card">${barChart({ title: `Interest earned by month, ${view.year}`, labels: MONTHS, bars: [{ name: "Fund interest", values: fm }] })}</div>
   <h2>Objectives</h2>
@@ -172,10 +183,11 @@ function pageMembers() {
   const list = sel.length ? sel.map(memberByCode) : activeMembers(db);
   const rows = list.map(m => memberRow(db, m, view.year, view.month));
   const labels = rows.map(r => sName(r.code)), tips = rows.map(r => `${r.name} (${r.code})`);
+  const memW = chartWidth(labels.length, 3); // both charts the same width, so the same height
   return head + `${sel.length > 1 ? `<h2>Side by side</h2><div class="cmp">${rows.map(r => { const st = statement(db, alloc, r.code, view.year); return `<div class="card"><b>${memberCell(r.code)}</b><div class="kpis small">${kp(`${view.year} savings`, money(r.yearSavings), "")}${kp("Target to date", money(r.currentTarget), "")}${kp("Gap", money(r.gap), r.insight)}${kp("Risk flag", pillFor(r.risk), "")}${kp("Fund balance", money(st.fundBalance), "")}${kp("Loan outstanding", money(st.outstanding), "")}</div></div>`; }).join("")}</div>` : ""}
   <div class="grid2">
-    <div>${barChart({ title: "Total contributions per member", labels, tips, bars: [{ name: "Registration", values: rows.map(r => r.registration) }, { name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }, { name: "Total savings", values: rows.map(r => r.totalSavings) }], rotate: true })}</div>
-    <div>${barChart({ title: "Monthly savings and targets", labels, tips, bars: [{ name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }], lines: [{ name: "Target to date", values: rows.map(r => r.currentTarget) }, { name: "Annual target", values: rows.map(r => r.annualTarget) }], rotate: true })}</div>
+    <div>${barChart({ width: memW, title: "Total contributions per member", labels, tips, bars: [{ name: "Registration", values: rows.map(r => r.registration) }, { name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }, { name: "Total savings", values: rows.map(r => r.totalSavings) }], rotate: true })}</div>
+    <div>${barChart({ width: memW, title: "Monthly savings and targets", labels, tips, bars: [{ name: `${view.year} savings`, values: rows.map(r => r.yearSavings) }], lines: [{ name: "Target to date", values: rows.map(r => r.currentTarget) }, { name: "Annual target", values: rows.map(r => r.annualTarget) }], rotate: true })}</div>
   </div>
   <h2>Statements ${view.year} (STT)</h2>
   ${tbl(["Member", ["Accumulated savings", "n"], ["Membership", "n"], ["Loan interest received", "n"], ["Loan repayment", "n"], [`Borrowing ${view.year}`, "n"], [`Loan paid ${view.year}`, "n"], ["Loan outstanding", "n"]],
@@ -460,11 +472,11 @@ function pageAbout() {
   <p>KAM runs the SACCO's records: members, savings, the fund and its interest, loans, projects, meetings, expenses and the year-end. Every figure is calculated from the payments recorded – nothing is typed into a total.</p>
   <p>The app is this one HTML file. The data is a separate folder of notes (Markdown files) – each year's admin receives both in the handover zip. The data never goes to GitHub.</p>
   <div class="row noprint"><button class="primary" data-tour="1" title="A short guided tour of the pages, on made-up data">Start the tour</button></div></div>
-  ${tryCard(false)}
+  <h2>From the spreadsheet to KAM</h2><div class="card"><p>Every sheet of the old workbook and the page that replaces it. You now record only what happened – payments, fund statements, loans – and KAM calculates every total, statement and graph.</p>${sheetMapHtml("sheetMap")}</div>
   <h2>How KAM is built</h2><div class="card md">${mdToHtml(APP.structure)}</div>
   <h2>Waiting to be built</h2><div class="card md">${mdToHtml(APP.waiting)}</div>
   <h2>The workbook analysis</h2><div class="card md">${mdToHtml(APP.analysis)}</div>
-  <h2>What's new</h2><div class="card md">${mdToHtml(APP.changes)}</div>`;
+  <h2 id="whatsNew">What's new</h2>${whatsNewHtml()}`;
 }
 
 /* ---------------------------------------------------------------- Settings */
@@ -473,6 +485,7 @@ function pageSettings() {
   return `<h1>Settings</h1>
   <div class="card"><h2 style="margin-top:0">Data folder</h2><p>${store.demo ? "Demo data (in memory – nothing is saved)." : `Connected: <b>${esc(store.root ? store.root.name : "–")}</b> · ${store.notes.size} notes.`}</p>
   <div class="row"><button id="pickFolder" title="Choose the data folder to work in">Choose another data folder</button><button id="reload" title="Read the data folder again">Read again</button></div></div>
+  ${testModeCard()}
   <div class="card"><h2 style="margin-top:0">Getting started</h2><p>A guided tour of the pages on made-up data – for a new admin.</p><div class="row"><button data-tour="1" title="Start the tour">Start the tour</button></div></div>
   <div class="card"><h2 style="margin-top:0">AppDev</h2><p>The AppDev page explains the data model and how the app is built, and sends comments to the developer${devEmail() ? ` (${esc(devEmail())})` : ""}. It is <b>${appdevOn() ? "on" : "off"}</b>.</p>
   ${s ? `<div class="row"><button id="appdevToggle" title="Show or hide the AppDev page">${appdevOn() ? "Switch AppDev off" : "Switch AppDev on"}</button></div>` : ""}</div>

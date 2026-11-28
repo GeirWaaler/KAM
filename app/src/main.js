@@ -116,15 +116,20 @@ function wire() {
   if ($("amountMode")) $("amountMode").onchange = () => guarded(async () => { await saveNote(settingsNote(), { amount_display: $("amountMode").value }); refreshDb(); render(); status("Amounts are now shown " + ({ numbers: "as plain numbers", code: "with the currency code", USh: "with USh", slash: "the Ugandan way, 1,300,000/=" })[amountMode()] + "."); });
   if ($("histQ")) $("histQ").oninput = () => { view.histQ = $("histQ").value; const pos = $("histQ").selectionStart; render(); $("histQ").focus(); try { $("histQ").setSelectionRange(pos, pos); } catch {} };
   if ($("histMonth")) $("histMonth").onchange = () => { view.histMonth = $("histMonth").value; render(); };
-  if ($("tryCard")) wireTry($("tryCard"));
+  on("[data-test]", el => startTest(el.dataset.test));
+  on("#testStart", () => startTest(APP.version));
+  on("#testLater", () => { lsSet("kam-test-pending", ""); render(); });
+  on("#testWhatsNew", () => { go("about"); setTimeout(() => { const w = $("whatsNew"); if (w) w.scrollIntoView(); }, 50); });
+  if ($("testOffer")) $("testOffer").onchange = () => { lsSet("kam-test-offer", $("testOffer").checked ? "on" : "off"); render(); };
   on("[data-tour]", () => guarded(startTour));
+  wireSheetMap($("main"));
   on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("members", { sel: [v] }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
   if ($("appdevToggle")) $("appdevToggle").onclick = () => guarded(async () => { await saveNote(settingsNote(), { appdev: appdevOn() ? "off" : "on" }); refreshDb(); render(); status(`AppDev is ${appdevOn() ? "on" : "off"}.`); });
   if ($("devNew")) $("devNew").onclick = () => guarded(async () => {
     const title = $("devTitle").value.trim(), text = $("devText").value.trim();
     if (!title && !text) throw new Error("Write a subject or a comment first.");
     await createNote("devnote", { date: todayISO(), title: title || text.slice(0, 60), kind: $("devKind").value, page: $("devPage").value, status: "new" }, text);
-    refreshDb(); render(); status("Comment saved. Send it with <b>Send to Geir</b> when you're ready.");
+    refreshDb(); render(); status("Comment saved. Send it with <b>Send to the developer</b> when you're ready.");
   });
   const unsentDev = () => devnotes().filter(d => (d.status || "new") === "new");
   if ($("devSend")) $("devSend").onclick = () => {
@@ -194,14 +199,13 @@ function wire() {
 /* ---------------------------------------------------------------- the data folder */
 async function useFolder(h, ask) {
   if (h.queryPermission) { let p = await h.queryPermission({ mode: "readwrite" }); if (p !== "granted" && ask) p = await h.requestPermission({ mode: "readwrite" }); if (p !== "granted") return welcome(h); }
-  store.root = h; store.demo = false; $("demoBand").hidden = true;
+  store.root = h; store.demo = false;
   try { await idb("readwrite", st => st.put(h, "folder")); } catch {}
   $("main").innerHTML = `<p class="muted">Reading ${esc(h.name)}…</p>`;
   await scanStore();
-  $("folderChip").textContent = `📁 ${h.name}`; $("folderChip").title = "The data folder KAM is working in";
   refreshDb();
   if (!settingsNote()) { view.tab = "settings"; render(); status("This folder has no KAM settings yet. If it is the right (empty) folder, press <b>Set up this folder for KAM</b>.", "warn"); return; }
-  render(); whatsNewPopup();
+  noticeUpdate(); render();
 }
 async function pickFolder() {
   if (!window.showDirectoryPicker) { status("This browser can't open folders. Use <b>Chrome</b> or <b>Edge</b> on a computer, and open KAM.html directly.", "err"); return; }
@@ -220,7 +224,7 @@ async function startDemo() {
     for (const p of parts) d = await d.getDirectoryHandle(p, { create: true });
     const f = await d.getFileHandle(name, { create: true }), w = await f.createWritable(); await w.write(text); await w.close();
   }
-  store.root = root; store.demo = true; $("demoBand").hidden = false; $("folderChip").textContent = "Demo data";
+  store.root = root; store.demo = true;
   await scanStore(); view.year = 0; refreshDb(); view.tab = "home"; render();
 }
 function welcome(h) {
@@ -255,7 +259,8 @@ async function handoverZip(kind = "handover") {
 /* ---------------------------------------------------------------- start */
 $("repYear").onchange = () => { view.year = Number($("repYear").value); render(); };
 $("repMonth").onchange = () => { view.month = Number($("repMonth").value); render(); };
-$("leaveDemo").onclick = () => location.reload();
+$("appVersion").textContent = `v${APP.version} · ${APP.date}`;
+$("refreshBtn").onclick = () => guarded(async () => { await scanStore(); refreshDb(); render(); status("Read the data folder again."); });
 $("helpPill").onclick = () => $("helpCard").hidden ? openHelp() : closeHelp();
 document.addEventListener("keydown", e => {
   if ($("present") && !$("present").hidden) { if (e.key === "ArrowRight" || e.key === " " || e.key === "PageDown") { e.preventDefault(); pres.i++; showSlide(); } else if (e.key === "ArrowLeft" || e.key === "PageUp") { e.preventDefault(); pres.i--; showSlide(); } else if (e.key === "Escape") stopPresent(); return; }

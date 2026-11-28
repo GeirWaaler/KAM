@@ -17,7 +17,7 @@ import urllib.parse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.4"
+VERSION = "1.6"
 VERSION_DATE = "2026-11-28"
 PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "features.js", "main.js"]
 
@@ -41,6 +41,14 @@ def version_sections(text):
 def latest_section(text):
     sec = version_sections(text).get(VERSION, "")
     return re.sub(r"\*\*Try:\*\*.*", "", sec, flags=re.S).strip()
+
+
+def versions(text):
+    """[{v, title, date, body}] newest first – the What's new text of each version, without its Try list."""
+    out = []
+    for m in re.finditer(r"^### KAM ([0-9.]+) – (.*?) · ([0-9-]+)\n(.*?)(?=^### |\Z)", text, flags=re.M | re.S):
+        out.append({"v": m.group(1), "title": m.group(2), "date": m.group(3), "body": re.sub(r"\*\*Try:\*\*.*", "", m.group(4), flags=re.S).strip()})
+    return out
 
 
 def tries(text):
@@ -82,12 +90,13 @@ def main():
         "structure": re.sub(r"^# [^\n]*\n", "", read("docs", "app-structure.md"), count=1).strip(),
         "changes": re.sub(r"<!--.*?-->", "", re.sub(r"^# [^\n]*\n", "", read("CHANGELOG.md"), count=1)).strip(),
         "latest": latest_section(read("CHANGELOG.md")),
+        "versions": versions(read("CHANGELOG.md")),
         "tries": tries(read("CHANGELOG.md")),
     }
     js = "const APP = " + json.dumps(app, ensure_ascii=False) + ";\n" + "\n".join(read("app", "src", p) for p in PARTS)
     js = js.replace("</script", "<\\/script")
     logo = read("app", "src", "logo.svg").strip()
-    favicon = "data:image/svg+xml," + urllib.parse.quote(logo, safe=" =:/,;#")
+    favicon = "data:image/svg+xml," + urllib.parse.quote(logo, safe=" =:/,;")
     html = read("app", "src", "shell.html").replace("/*__FAVICON__*/", favicon).replace("/*__LOGO__*/", logo).replace("/*__JS__*/", js)
     os.makedirs(os.path.join(ROOT, "dist"), exist_ok=True)
     with open(os.path.join(ROOT, "dist", "KAM.html"), "w", encoding="utf-8") as f:

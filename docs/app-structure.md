@@ -44,4 +44,4 @@ The menu on the left groups the pages – the main pages first, then Money, Grou
 
 ## Changing the app
 
-The app is developed by Geir with Claude. Changes come as a new `KAM.html`. Write ideas, problems and questions under **AppDev › Comments** and send them with **Send to Geir** – they reach the developer by email.
+The app is looked after by its developer, working with Claude. Changes come as a new `KAM.html`. Write ideas, problems and questions under **AppDev › Comments** and send them with **Send to the developer** – they reach the developer by email.

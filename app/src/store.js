@@ -133,6 +133,7 @@ async function walk(dir, dirPath, depth = 0) {
 async function scanStore() {
   store.notes = new Map(); store.errors = [];
   if (store.root) await walk(store.root, "");
+  store.readAt = new Date();
   for (const n of store.notes.values()) if (n.error) store.errors.push({ path: n.path, why: n.error });
 }
 const notesOf = type => [...store.notes.values()].filter(n => !n.error && !n.deleted && n.type === type);

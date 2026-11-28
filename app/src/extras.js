@@ -58,7 +58,7 @@ function pageAppdev() {
   <div class="row"><button class="primary" id="devNew" title="Save the comment in the data folder">Save comment</button></div>
   <h3>Comments (${notes.length}, ${unsent.length} not sent)</h3>
   ${notes.length ? tbl(["Date", "Kind", "Page", "Subject", "Status", ""], notes.map(d => tr([esc(d.date), esc(d.kind), esc(d.page), esc(d.title), `<span class="tag ${d.status === "done" ? "ok" : d.status === "sent" ? "muted" : "warn"}">${esc(d.status || "new")}</span>`, `<button class="lnk" data-edit="${esc(d.note.path)}" title="Open the comment">Open</button>`]))) : `<p class="muted">No comments yet.</p>`}
-  <div class="row"><button class="primary" id="devSend" ${unsent.length ? "" : "disabled"} title="${devEmail() ? "Opens an email to the developer with the comments not yet sent" : "Add the developer's email under Settings first"}">Send to Geir (${unsent.length})</button>
+  <div class="row"><button class="primary" id="devSend" ${unsent.length ? "" : "disabled"} title="${devEmail() ? "Opens an email to the developer with the comments not yet sent" : "Add the developer's email under Settings first"}">Send to the developer (${unsent.length})</button>
   <button id="devCopy" ${unsent.length ? "" : "disabled"} title="Copy the comments as text – paste them into an email if the button above doesn't work">Copy the comments</button>
   ${devEmail() ? "" : `<span class="warn small">No developer email in Settings yet.</span>`}</div><div id="devAfter"></div></div>
   <h2>How KAM is built</h2><div class="card md">${mdToHtml(APP.structure)}</div>
@@ -70,28 +70,58 @@ function devMailText(list) {
 }
 
 /* ---------------------------------------------------------------- the onboarding tour (runs on the demo data) */
+/* ---------------------------------------------------------------- From the spreadsheet: every workbook sheet and where it lives in KAM
+   One list for the tour, Help (Where did my sheet go?) and About. Sheet names are the workbook's own. */
+const SHEETS = [
+  { sheet: "Receipts", tab: "receipts", how: "The core ledger. Each payment is one note; the member-by-month table is built from them. The Monthly round enters a whole collection at once." },
+  { sheet: "STT", tab: "members", how: "Each member's statement – click their pill on Members. Also in the monthly update." },
+  { sheet: "Group Dashboard", tab: "home", how: "Key figures, Follow up, the year and quarter graphs, monthly interest and every member against target. Objectives and projects are on Projects." },
+  { sheet: "Individuals Dashboard", tab: "members", how: "Members: pick a member's pill instead of the member picker. Contacts and time zones are at the bottom." },
+  { sheet: "Loan Application", tab: "loans", how: "+ New loan is the application; its approval, payout and repayment plan follow on the loan." },
+  { sheet: "EXP LOAN", tab: "loans", how: "Borrowing, repayment and what is outstanding per member – calculated from the loans and their repayments." },
+  { sheet: "Expenses", tab: "expenses", how: "Funding sources and expenses, each linked to a project. Welfare payouts are expenses too." },
+  { sheet: "Monthly Meeting", tab: "meetings", how: "The standing agenda and the committee; each meeting is a note with its minutes." },
+  { sheet: "Project Tracker", tab: "projects", how: "Projects with owner, progress, start and end, and a timeline." },
+  { sheet: "Investment Plan, Tech Plan, Sacco Secretary, Treasury Plan, Database Plan, Welfare Plan", tab: "plans", how: "Each plan is a note you can edit; the empty ones are ready to fill in." },
+  { sheet: "Dividend Cal for EOY 2021 and Requests & Share - Dec2021 (hidden)", tab: "yearend", how: "The dividend calculation and the share-out list." },
+  { sheet: "Dividends Calc (hidden)", tab: "yearend", how: "The old 2021 dividends – kept as history; this year's dividends are calculated on Year-end." },
+  { sheet: "Sheet3 – cash count (hidden)", tab: "yearend", how: "The cash count by banknote." },
+  { sheet: "Interest earned (row on Receipts)", tab: "interest", how: "Enter the fund statement each month; KAM shares the interest among the members – nothing typed per member." },
+  { sheet: "The five graphs", tab: "home", how: "Year, quarter and monthly interest on Home; contributions and savings against targets on Members – all drawn from the payments." },
+];
+const tabName = t => (TABS.find(x => x[0] === t) || [t, t])[1];
+function sheetMapHtml(id = "", compact = false) {
+  if (compact) return SHEETS.map(x => `<div class="hlp-it" style="padding:6px 0;border-bottom:1px solid var(--line, #ddd)"><b>${esc(x.sheet)}</b> → <button class="lnk" data-sheettab="${x.tab}" title="Open ${esc(tabName(x.tab))}">${esc(tabName(x.tab))}</button><div class="small muted">${esc(x.how)}</div></div>`).join("");
+  return `<div class="tablewrap"${id ? ` id="${id}"` : ""}><table><thead><tr><th>In the workbook</th><th>In KAM</th><th>How</th></tr></thead><tbody>${SHEETS.map(x =>
+    `<tr><td><b>${esc(x.sheet)}</b></td><td><button class="lnk" data-sheettab="${x.tab}" title="Open ${esc(tabName(x.tab))}">${esc(tabName(x.tab))}</button></td><td>${esc(x.how)}</td></tr>`).join("")}</tbody></table></div>`;
+}
+function wireSheetMap(root, before = () => {}) { root.querySelectorAll("[data-sheettab]").forEach(b => b.onclick = () => { before(); go(b.dataset.sheettab); }); }
+
 const TOUR = [
-  { ch: "Finding your way", tab: "home", sel: "#tabs", title: "The menu", text: "The menu on the left holds every page, grouped: Money, Group, Reporting and Housekeeping. Narrow menu at the bottom shrinks it to icons." },
-  { ch: "Finding your way", tab: "home", sel: "#period", title: "Reporting month", text: "Pick the month to report on. The dashboards, statements and targets all follow it." },
-  { ch: "Finding your way", tab: "home", sel: ".kpis", title: "Key figures", text: "Every number is added up from the payments recorded – nothing is typed into a total." },
+  { ch: "Coming from the spreadsheet", tab: "home", sel: ".kpis", title: "Every sheet has a home", text: "KAM replaces the Excel workbook. Each step of this tour says which sheet it replaces (the line under the text). The biggest change: you only record what happened – payments, the fund statement, loans – and every total, statement and graph is calculated from that. Nothing is typed into a total, so nothing can drift. Help › Where did my sheet go? lists every sheet." },
+  { ch: "Finding your way", tab: "home", sel: "#tabs", xl: "All the sheet tabs at the bottom of the workbook", title: "The menu", text: "The menu on the left holds every page, grouped: Money, Group, Reporting and Housekeeping. Narrow menu at the bottom shrinks it to icons." },
+  { ch: "Finding your way", tab: "home", sel: "#folderChip", xl: "The workbook file itself – now a folder of small notes, one per payment, loan or member", title: "Data folder and version", text: "As in Horizons: the data folder is on the right of the top bar – click it to choose another, ⟳ reads it again. The version of the app is under the logo." },
+  { ch: "Finding your way", tab: "home", sel: "#period", xl: "The month you picked on Group Dashboard", title: "Reporting month", text: "Pick the month to report on. The dashboards, statements and targets all follow it." },
+  { ch: "Finding your way", tab: "home", sel: ".kpis", xl: "Group Dashboard – the KPIs at the top", title: "Key figures", text: "Every number is added up from the payments recorded – nothing is typed into a total." },
   { ch: "Finding your way", tab: "home", sel: "#helpPill", title: "Help", text: "The ? in the corner (or F1) explains the page you're on, with Show me – and searches the help for every page." },
-  { ch: "Finding your way", tab: "home", sel: "#followup", title: "Follow up", text: "What needs attention: members behind on savings, overdue loans, a missing fund statement, data problems. Fix one and it disappears." },
-  { ch: "Finding your way", tab: "members", sel: "#mpills", title: "Members", text: "Click a member's pill to see their statement right here, or several pills to compare them. All members shows everyone: contacts, statements and the committee." },
-  { ch: "Recording money", tab: "receipts", sel: "[data-pay]", title: "Record a payment", text: "One payment at a time: member, date, kind (savings, membership, welfare, penalty, loan repayment…) and amount." },
-  { ch: "Recording money", tab: "receipts", sel: "[data-round]", title: "Monthly round", text: "Enter every member's payments for a month in one table – the quickest way after each collection." },
-  { ch: "Recording money", tab: "receipts", sel: ".tablewrap", title: "The ledger", text: "The Receipts sheet as you know it: each member by month, the receipt summary, the fund and cash at hand. Pick a member's pill to see only them." },
-  { ch: "Recording money", tab: "receipts", sel: "#rcToggle", title: "Fold the members", text: "Each member folds to one line with their year's key numbers – click it to open, or Expand all / Collapse all." },
-  { ch: "Recording money", tab: "receipts", sel: "#closeMonth", title: "Close the month", text: "Once a month's payments and fund statement are checked against the statements, close it. Later changes ask first and show in History." },
-  { ch: "Loans and the fund", tab: "interest", sel: "[data-new='fund']", title: "The fund statement", text: "Each month, enter the fund's deposits and interest from its statement. The interest is then shared among the members automatically." },
-  { ch: "Loans and the fund", tab: "interest", sel: ".card", title: "How interest is shared", text: "By each member's balance at the start of the month. The shares always add up exactly to what the fund earned." },
-  { ch: "Loans and the fund", tab: "loans", sel: "[data-new='loan']", title: "Loans", text: "A loan request, its approval and payout; repayments are payments linked to the loan. Open a loan for its repayment plan and the printable application form." },
-  { ch: "Reporting and year-end", tab: "home", sel: "#presentBtn", title: "▶ Present", text: "At the monthly meeting, play the financial position as slides – arrow keys to move, Esc to stop." },
-  { ch: "Reporting and year-end", tab: "updates", sel: "#copyMail", title: "The monthly update", text: "Copy the update, open the email with every member in BCC, paste – and post the short version in the WhatsApp group. Save as PDF makes a document to attach." },
-  { ch: "Reporting and year-end", tab: "yearend", sel: "#divYear", title: "Year-end", text: "The dividend calculation and share-out list, and the cash count." },
-  { ch: "Reporting and year-end", tab: "history", sel: "#histQ", title: "History", text: "Every change saved – who, what and when – kept in the data folder." },
-  { ch: "Reporting and year-end", tab: "settings", sel: "#backupBtn", title: "Backup and Excel", text: "Download a backup now and then (Follow up reminds you). Export to Excel gives everything as a spreadsheet, if ever needed." },
+  { ch: "Finding your way", tab: "home", sel: "#followup", xl: "New – the workbook had nothing like it; the risk flag on Group Dashboard came closest", title: "Follow up", text: "What needs attention: members behind on savings, overdue loans, a missing fund statement, data problems. Fix one and it disappears." },
+  { ch: "Finding your way", tab: "members", sel: "#mpills", xl: "Individuals Dashboard and STT (the member statement)", title: "Members", text: "Click a member's pill to see their statement right here, or several pills to compare them. All members shows everyone: contacts, statements and the committee." },
+  { ch: "Recording money", tab: "receipts", sel: "[data-pay]", xl: "Receipts – typing into a member's rows for the month", title: "Record a payment", text: "One payment at a time: member, date, kind (savings, membership, welfare, penalty, loan repayment…) and amount." },
+  { ch: "Recording money", tab: "receipts", sel: "[data-round]", xl: "Receipts – filling in a month's column for everyone", title: "Monthly round", text: "Enter every member's payments for a month in one table – the quickest way after each collection." },
+  { ch: "Recording money", tab: "receipts", sel: ".tablewrap", xl: "Receipts – the same layout, built from the payments", title: "The ledger", text: "The Receipts sheet as you know it: each member by month, the receipt summary, the fund and cash at hand. Pick a member's pill to see only them." },
+  { ch: "Recording money", tab: "receipts", sel: "#rcToggle", xl: "Receipts – scrolling past each member's 8 rows", title: "Fold the members", text: "Each member folds to one line with their year's key numbers – click it to open, or Expand all / Collapse all." },
+  { ch: "Recording money", tab: "receipts", sel: "#closeMonth", xl: "New – in the workbook anyone could change last month's numbers", title: "Close the month", text: "Once a month's payments and fund statement are checked against the statements, close it. Later changes ask first and show in History." },
+  { ch: "Loans and the fund", tab: "interest", sel: "[data-new='fund']", xl: "The Interest earned row on Receipts", title: "The fund statement", text: "Each month, enter the fund's deposits and interest from its statement. The interest is then shared among the members automatically." },
+  { ch: "Loans and the fund", tab: "interest", sel: ".card", xl: "Interest earned per member – now calculated, not typed", title: "How interest is shared", text: "By each member's balance at the start of the month. The shares always add up exactly to what the fund earned." },
+  { ch: "Loans and the fund", tab: "loans", sel: "[data-new='loan']", xl: "Loan Application and EXP LOAN", title: "Loans", text: "A loan request, its approval and payout; repayments are payments linked to the loan. Open a loan for its repayment plan and the printable application form." },
+  { ch: "Reporting and year-end", tab: "home", sel: "#presentBtn", xl: "Showing Group Dashboard at the meeting", title: "▶ Present", text: "At the monthly meeting, play the financial position as slides – arrow keys to move, Esc to stop." },
+  { ch: "Reporting and year-end", tab: "updates", sel: "#copyMail", xl: "Copying STT figures into emails and WhatsApp", title: "The monthly update", text: "Copy the update, open the email with every member in BCC, paste – and post the short version in the WhatsApp group. Save as PDF makes a document to attach." },
+  { ch: "Reporting and year-end", tab: "yearend", sel: "#divYear", xl: "The hidden sheets Dividend Cal, Requests & Share and Sheet3 (cash count)", title: "Year-end", text: "The dividend calculation and share-out list, and the cash count." },
+  { ch: "Reporting and year-end", tab: "history", sel: "#histQ", xl: "New – the workbook didn't record who changed what", title: "History", text: "Every change saved – who, what and when – kept in the data folder." },
+  { ch: "Reporting and year-end", tab: "settings", sel: "#testModeCard", title: "Test mode", text: "After each update, KAM offers to guide you through what's new step by step. ✗ Doesn't writes a comment to the developer." },
+  { ch: "Reporting and year-end", tab: "settings", sel: "#backupBtn", xl: "Saving a copy of the workbook – Export to Excel gives you one again", title: "Backup and Excel", text: "Download a backup now and then (Follow up reminds you). Export to Excel gives everything as a spreadsheet, if ever needed." },
   { ch: "Reporting and year-end", tab: "appdev", sel: "#devNew", title: "AppDev", text: "Ideas or problems with the app? Write them here and send them to the developer.", when: () => appdevOn() },
-  { ch: "Reporting and year-end", tab: "settings", sel: "#handover", title: "The handover", text: "At the end of your year, download the handover zip and send it to the next admin. That's the tour – press Finish, then Leave the demo to work in your own data." },
+  { ch: "Reporting and year-end", tab: "settings", sel: "#handover", xl: "Passing the workbook on to the next admin", title: "The handover", text: "At the end of your year, download the handover zip and send it to the next admin. That's the tour – press Finish, then Leave the demo to work in your own data." },
 ];
 const tour = { i: -1 };
 const tourSteps = () => TOUR.filter(s => !s.when || s.when());
@@ -109,7 +139,7 @@ function showTourStep() {
   if (el) { el.classList.add("tourhl"); el.scrollIntoView({ block: "center", behavior: "smooth" }); }
   if (!p) { p = document.createElement("div"); p.id = "tourPanel"; document.body.appendChild(p); }
   const chs = [...new Set(st.map(x => x.ch))];
-  p.innerHTML = `<div class="small muted">Getting started · ${chs.indexOf(s.ch) + 1}/${chs.length} ${esc(s.ch)} · step ${tour.i + 1} of ${st.length}</div><h3 style="margin:4px 0">${esc(s.title)}</h3><p style="margin:4px 0 10px">${esc(s.text)}</p>
+  p.innerHTML = `<div class="small muted">Getting started · ${chs.indexOf(s.ch) + 1}/${chs.length} ${esc(s.ch)} · step ${tour.i + 1} of ${st.length}</div><h3 style="margin:4px 0">${esc(s.title)}</h3><p style="margin:4px 0 ${s.xl ? 6 : 10}px">${esc(s.text)}</p>${s.xl ? `<p class="small tourxl" style="margin:0 0 10px">📊 <b>In the workbook:</b> ${esc(s.xl)}</p>` : ""}
   <div class="row" style="margin:0"><button id="tBack" ${tour.i ? "" : "disabled"} title="The step before">Back</button><button class="primary" id="tNext" title="The next step">${tour.i === st.length - 1 ? "Finish" : "Next"}</button><button class="lnk" id="tClose" style="margin-left:auto" title="Stop the tour – start it again from About or Settings">Close</button></div>`;
   $("tBack").onclick = () => { tour.i--; showTourStep(); };
   $("tNext").onclick = () => { tour.i++; showTourStep(); };
