@@ -4,6 +4,7 @@
 
 - One question at a time, with clickable options.
 - Every agreed feature gets the question **Build it now** or **Wait – collect it**. Waiting features are listed below and built together when Geir chooses *Build it now*. Each build-or-wait question lists everything on the waiting list.
+- The Getting started tour is updated with every new feature, in the same release (2026-11-28).
 - Geir builds the app but is not a member of the group. Questions about the group's rules go to Arnold; until they answer, the app uses a default and makes it a setting.
 
 ## Background

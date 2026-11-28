@@ -14,6 +14,7 @@ Builder: Geir (not a member of the group). The group's contact: Arnold. Each yea
 - Work on a branch and open a pull request unless Geir asks to commit straight to `main`.
 - Code borrowed from Horizons (GeirWaaler/CRM-Horizons) is copied into this repo; nothing about KAM is ever written to the Horizons repo.
 - App language: English. Users are not developers – explain changes in plain language.
+- **Keep the tour current – every release** (Geir, 2026-11-28). Every change that adds or changes how something is used – a new page, button, menu item or way of working – updates in the same change the Getting started tour (`TOUR` in `extras.js`), and once built, the page help and About. Name pages exactly as the menu does. The test fails when a tour step points at something that no longer exists or names a page that isn't in the menu.
 
 ## Code
 
