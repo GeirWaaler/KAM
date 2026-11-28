@@ -472,6 +472,7 @@ function pageAbout() {
   <p>KAM runs the SACCO's records: members, savings, the fund and its interest, loans, projects, meetings, expenses and the year-end. Every figure is calculated from the payments recorded – nothing is typed into a total.</p>
   <p>The app is this one HTML file. The data is a separate folder of notes (Markdown files) – each year's admin receives both in the handover zip. The data never goes to GitHub.</p>
   <div class="row noprint"><button class="primary" data-tour="1" title="A short guided tour of the pages, on made-up data">Start the tour</button></div></div>
+  <h2>From the spreadsheet to KAM</h2><div class="card"><p>Every sheet of the old workbook and the page that replaces it. You now record only what happened – payments, fund statements, loans – and KAM calculates every total, statement and graph.</p>${sheetMapHtml("sheetMap")}</div>
   <h2>How KAM is built</h2><div class="card md">${mdToHtml(APP.structure)}</div>
   <h2>Waiting to be built</h2><div class="card md">${mdToHtml(APP.waiting)}</div>
   <h2>The workbook analysis</h2><div class="card md">${mdToHtml(APP.analysis)}</div>

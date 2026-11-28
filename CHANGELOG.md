@@ -1,5 +1,17 @@
 # What's new
 
+### KAM 1.6 – from the spreadsheet to KAM · 2026-11-28
+
+- **The tour starts from the spreadsheet**: a first step explains that every sheet has a home in KAM and that totals are now calculated, never typed. Each step then shows a 📊 line – **In the workbook:** – naming the sheet it replaces (Receipts, STT, Group Dashboard, EXP LOAN…).
+- **Help › Where did my sheet go?** (from any page): every sheet of the old workbook with the page that replaces it – click to go there. Searching help for a sheet's name finds it too.
+- **About › From the spreadsheet to KAM**: the same list.
+
+**Try:**
+- [ ] Start the tour – the first step is Coming from the spreadsheet, and each step names the sheet it replaces; Close when you've seen enough (the tour runs on made-up data) <!-- show: [data-tour]; tab: about -->
+- [ ] Press ? and choose Where did my sheet go? – click a page in the list to open it <!-- show: #helpPill; tab: home -->
+- [ ] Type STT in the help search – it finds the member statement <!-- show: #helpPill; tab: home -->
+- [ ] About › From the spreadsheet to KAM shows the whole list <!-- show: #sheetMap; tab: about -->
+
 ### KAM 1.5.1 – the tab icon, and charts side by side · 2026-11-28
 
 - **The KAM logo shows in the browser tab again.** It was built into the app the wrong way and the browser gave up on it.

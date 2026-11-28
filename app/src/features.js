@@ -327,23 +327,28 @@ const HELP = {
     { q: "Bring back something deleted", a: "Deleted notes are listed here with Restore (only when there are any)." },
     { q: "Test what's new in a version", a: "Test mode – go through a version's new things step by step, or switch off the offer after updates.", show: "#testModeCard" } ] },
   about: { title: "About", about: "What KAM is, how it is built, the workbook analysis, what is waiting to be built and what's new.", items: [
+    { q: "Where did my Excel sheet go?", a: "From the spreadsheet to KAM lists every sheet of the old workbook and the page that replaces it – click a page to open it. Help › Where did my sheet go? shows the same list from any page.", show: "#sheetMap" },
     { q: "Take the tour again", a: "Start the tour – it runs on made-up data.", show: "[data-tour]" },
     { q: "See what changed in each version", a: "What's new – each version with its Try steps and your ticks; Test these goes through them.", show: "#whatsNew" } ] },
 };
 const helpText = it => `${it.q} ${it.a}`.toLowerCase();
-function openHelp(q = "") {
+function openHelp(q = "", sheets = false) {
   const c = $("helpCard"), tab = HELP[view.tab] ? view.tab : "home", h = HELP[tab], Q = q.trim().toLowerCase();
   const item = (it, t) => `<details class="hlp-it"><summary>${esc(it.q)}${t !== tab ? ` <span class="muted small">– ${esc(HELP[t].title)}</span>` : ""}</summary><p>${esc(it.a)}</p>${it.show ? `<button class="lnk" data-hshow="${esc(it.show)}" data-htab="${t}" title="Point out where this is">Show me</button>` : ""}</details>`;
   const found = Q ? Object.entries(HELP).flatMap(([t, x]) => x.items.filter(it => helpText(it).includes(Q) || x.title.toLowerCase().includes(Q)).map(it => item(it, t))) : null;
   c.innerHTML = `<div class="row" style="margin-top:0"><b>Help – ${esc(h.title)}</b><button class="lnk" id="hlpClose" style="margin-left:auto" title="Close help (Esc)">Close</button></div>
   <input type="search" id="hlpQ" placeholder="Search help – e.g. loan, backup, PDF" value="${esc(q)}" title="Search every page's help" style="width:100%">
-  ${found ? (found.join("") || '<p class="muted">Nothing found – try another word, or take the tour.</p>') : `<p>${esc(h.about)}</p>${h.items.map(it => item(it, tab)).join("")}`}
-  <p class="small" style="margin-bottom:0"><button class="lnk" id="hlpTour" title="The guided tour on made-up data">The tour</button> · <button class="lnk" id="hlpNew" title="What changed in each version">What's new</button>${appdevOn() ? ` · <button class="lnk" id="hlpDev" title="Write to the developer">Ask the developer</button>` : ""}</p>`;
+  ${sheets ? `<p><b>Where did my sheet go?</b> Every sheet of the old workbook and the page that replaces it. <button class="lnk" id="hlpBack" title="Back to this page's help">Back</button></p>${sheetMapHtml("", true)}`
+    : found ? ([...found, ...SHEETS.filter(x => (x.sheet + " " + x.how).toLowerCase().includes(Q)).map(x => `<details class="hlp-it"><summary>Workbook: ${esc(x.sheet)} <span class="muted small">– ${esc(tabName(x.tab))}</span></summary><p>${esc(x.how)}</p><button class="lnk" data-sheettab="${x.tab}" title="Open ${esc(tabName(x.tab))}">Open ${esc(tabName(x.tab))}</button></details>`)].join("") || '<p class="muted">Nothing found – try another word, or take the tour.</p>') : `<p>${esc(h.about)}</p>${h.items.map(it => item(it, tab)).join("")}`}
+  <p class="small" style="margin-bottom:0"><button class="lnk" id="hlpTour" title="The guided tour on made-up data">The tour</button> · <button class="lnk" id="hlpSheets" title="Every sheet of the old Excel workbook and the page that replaces it">Where did my sheet go?</button> · <button class="lnk" id="hlpNew" title="What changed in each version">What's new</button>${appdevOn() ? ` · <button class="lnk" id="hlpDev" title="Write to the developer">Ask the developer</button>` : ""}</p>`;
   c.hidden = false; $("helpPill").setAttribute("aria-expanded", "true");
   $("hlpClose").onclick = closeHelp;
   $("hlpQ").oninput = e => { const v = e.target.value, pos = e.target.selectionStart; openHelp(v); $("hlpQ").focus(); try { $("hlpQ").setSelectionRange(pos, pos); } catch {} };
   c.querySelectorAll("[data-hshow]").forEach(b => b.onclick = () => { closeHelp(); showMe(b.dataset.hshow, b.dataset.htab); });
   $("hlpTour").onclick = () => { closeHelp(); guarded(startTour); };
+  $("hlpSheets").onclick = () => openHelp("", true);
+  if ($("hlpBack")) $("hlpBack").onclick = () => openHelp();
+  wireSheetMap(c, closeHelp);
   $("hlpNew").onclick = () => { closeHelp(); go("about"); setTimeout(() => { const w = [...document.querySelectorAll("#main h2")].find(x => x.textContent === "What's new"); if (w) w.scrollIntoView(); }, 50); };
   if ($("hlpDev")) $("hlpDev").onclick = () => { closeHelp(); go("appdev"); };
 }

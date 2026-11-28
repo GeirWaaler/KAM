@@ -17,7 +17,7 @@ import urllib.parse
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 SRC = os.path.join(ROOT, "app", "src")
-VERSION = "1.5.1"
+VERSION = "1.6"
 VERSION_DATE = "2026-11-28"
 PARTS = ["store.js", "calc.js", "charts.js", "views.js", "extras.js", "features.js", "main.js"]
 

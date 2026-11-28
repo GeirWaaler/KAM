@@ -190,7 +190,21 @@ def main():
         check(not missing, f"tour: all {n} steps point at something on their page {missing}")
         names = pg.evaluate("TABS.map(t => t[0])"); bad = pg.evaluate("TOUR.filter(s => !TABS.some(t => t[0] === s.tab)).length")
         check(bad == 0, "tour: every step names a page in the menu")
+        nox = pg.evaluate("TOUR.filter(s => !s.xl).map(s => s.title)")
+        check(pg.evaluate("TOUR[0].ch") == "Coming from the spreadsheet" and len(nox) <= 4, f"tour: starts from the spreadsheet and most steps name the sheet they replace (without: {nox})")
+        pg.evaluate("tour.i = 1; showTourStep()"); check("In the workbook:" in pg.inner_text("#tourPanel"), "tour panel shows the workbook line")
         pg.click("#tClose"); check(pg.locator("#tourPanel").count() == 0, "tour closes")
+        badtab = pg.evaluate("SHEETS.filter(x => !TABS.some(t => t[0] === x.tab)).map(x => x.sheet)")
+        check(not badtab, f"every workbook sheet points at a page in the menu {badtab}")
+        analysis = pg.evaluate("APP.analysis"); import re as _re
+        sheetnames = [m.split(" (")[0] for m in _re.findall(r"^\| ([^|]+?) \|", analysis.split("## Sheet by sheet")[1].split("##")[0], _re.M) if m not in ("Sheet", "---")]
+        mapped = pg.evaluate("SHEETS.map(x => x.sheet).join(' | ')")
+        miss = [n for n in sheetnames if not all(part.strip() in mapped for part in n.split(","))]
+        check(not miss, f"every sheet in the workbook analysis is in the sheet map {miss}")
+        pg.keyboard.press("F1"); pg.click("#hlpSheets"); check(pg.locator("#helpCard [data-sheettab]").count() == pg.evaluate("SHEETS.length"), "Help › Where did my sheet go? lists every sheet")
+        pg.click("#helpCard [data-sheettab='loans']"); check(pg.evaluate("view.tab") == "loans" and pg.locator("#helpCard").is_hidden(), "a sheet's page link opens that page")
+        pg.keyboard.press("F1"); pg.fill("#hlpQ", "STT"); check("Workbook: STT" in pg.inner_text("#helpCard"), "help search finds a sheet by name"); pg.keyboard.press("Escape")
+        pg.evaluate("go('about')"); check(pg.locator("#sheetMap tbody tr").count() == pg.evaluate("SHEETS.length"), "About shows From the spreadsheet to KAM")
 
         # a real folder (OPFS): read, record a payment, monthly round, handover zip
         files = {}

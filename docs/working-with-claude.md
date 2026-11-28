@@ -72,6 +72,7 @@ Defaults are used until answered.
 - **KAM 1.4** (2026-11-28): how amounts are shown; short names on chart axes; member pills on Members (one member, or side by side); member pills and folding on Receipts; name first, code as a pill; Help (? and F1); Export to Excel and Save as PDF; How KAM is built in About; What's new pop-up with Try list; ▶ Present; one-click data folder updates; History; archive instead of delete; close the month; receipts to members; backup and reminder.
 - **KAM 1.5** (2026-11-28): the top bar as in Horizons (version under the logo, data folder chip with ⟳ on the right, demo in the chip); test mode as in Horizons (line after an update, step-by-step panel, ✗ Doesn't → AppDev comment, Settings › Test mode, ticks in About › What's new); "Send to the developer" instead of a name.
 - **KAM 1.5.1** (2026-11-28): the favicon works (the `#` in the logo colours must be escaped in the data URI – tested); charts side by side get the same width and so the same height (`chartWidth`, `width:` in `barChart` – tested on Members and Home).
+- **KAM 1.6** (2026-11-28): from the spreadsheet to KAM – the tour opens with *Coming from the spreadsheet* and each step has an *In the workbook:* line (`xl` in `TOUR`); `SHEETS` in `extras.js` maps every workbook sheet to its page, shown in Help › Where did my sheet go? (and help search) and About › From the spreadsheet to KAM. Tested: every sheet in the workbook analysis is mapped; every mapped page is in the menu. **Keep `SHEETS` and the tour's `xl` lines current** when pages change.
 
 ## Status
 

@@ -122,6 +122,7 @@ function wire() {
   on("#testWhatsNew", () => { go("about"); setTimeout(() => { const w = $("whatsNew"); if (w) w.scrollIntoView(); }, 50); });
   if ($("testOffer")) $("testOffer").onchange = () => { lsSet("kam-test-offer", $("testOffer").checked ? "on" : "off"); render(); };
   on("[data-tour]", () => guarded(startTour));
+  wireSheetMap($("main"));
   on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("members", { sel: [v] }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
   if ($("appdevToggle")) $("appdevToggle").onclick = () => guarded(async () => { await saveNote(settingsNote(), { appdev: appdevOn() ? "off" : "on" }); refreshDb(); render(); status(`AppDev is ${appdevOn() ? "on" : "off"}.`); });
   if ($("devNew")) $("devNew").onclick = () => guarded(async () => {
