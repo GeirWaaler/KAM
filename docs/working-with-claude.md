@@ -31,7 +31,7 @@
 
 ## Waiting to be built
 
-Nothing agreed is waiting.
+- **How amounts are shown** (agreed 2026-11-28, waiting) – a setting with four choices: numbers only (1,300,000), UGX 1,300,000, USh 1,300,000, or 1,300,000/=. Applies everywhere: pages, statements, printouts, the email and WhatsApp updates, the handover summary. With numbers only, one line "All amounts in UGX" under the page heading and at the end of the email. Stored in the data folder's settings; default numbers only. (The shilling has no symbol of its own – USh is the abbreviation, and prices are written like 5,000/=.)
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
