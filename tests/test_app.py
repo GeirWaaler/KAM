@@ -80,6 +80,8 @@ def main():
                 check(len(txt) > 40 and "NaN" not in txt and "undefined" not in txt, f"[{tag}] {t}: renders, no NaN/undefined")
                 if shots:
                     pg.screenshot(path=os.path.join(SHOTS, f"{tag}-{t}.png"), full_page=True)
+            if tag == "phone":
+                box = pg.locator("#tabs").bounding_box(); check(box["width"] > 350 and box["y"] < 200, "[phone] the menu is a row along the top")
             check(not errors, f"[{tag}] no script errors {errors[:3]}")
             ctx.close()
 
@@ -87,6 +89,11 @@ def main():
         ctx = b.new_context(viewport={"width": 1280, "height": 900}, accept_downloads=True)
         pg = ctx.new_page()
         pg.goto(url + "#demo"); pg.wait_for_selector("#tabs button")
+        box = pg.locator("#tabs").bounding_box(); check(box["height"] > 600 and box["width"] < 220, "the menu is a column on the left")
+        check(pg.locator("#tabs svg.ni").count() >= 14, "every menu item has an icon")
+        pg.click("#navToggle"); check(pg.locator("#frame.mini").count() == 1 and pg.locator("#tabs").bounding_box()["width"] < 70, "Narrow menu shrinks it to icons")
+        pg.reload(); pg.wait_for_selector("#tabs button"); check(pg.locator("#frame.mini").count() == 1, "the narrow menu is remembered")
+        pg.click("#navToggle"); check(pg.locator("#frame.mini").count() == 0, "Wide menu brings the names back")
         check("<h3>Data</h3>" not in pg.inner_html("#followup"), "home: no data problems in Follow up on the demo data")
         pg.click('#tabs [data-tab="interest"]'); check("✓ Interest shares add up" in pg.inner_text("#main"), "interest check passes on demo data"); pg.click('#tabs [data-tab="home"]')
         check(pg.locator("svg.chart").count() == 3, "home: 3 charts (year, quarter, interest by month)")

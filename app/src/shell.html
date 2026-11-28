@@ -15,10 +15,34 @@ header { display:flex; flex-wrap:wrap; align-items:center; gap:8px 14px; padding
 .logo { font-weight:800; letter-spacing:.06em; background:var(--accent); color:var(--accent-ink); border-radius:6px; padding:2px 8px; }
 #sacco { font-weight:600; }
 #period { display:flex; gap:6px; align-items:center; margin-left:auto; }
-nav { display:flex; gap:2px; overflow-x:auto; padding:0 12px; background:var(--card); border-bottom:1px solid var(--line); }
-nav button { border:0; background:none; padding:10px 10px; color:var(--muted); font:inherit; cursor:pointer; white-space:nowrap; border-bottom:3px solid transparent; }
-nav button.on { color:var(--ink); border-bottom-color:var(--accent); font-weight:600; }
-main { padding:16px; max-width:1200px; margin:0 auto; }
+/* the left-hand menu (as in Horizons): icons, groups, narrow mode remembered per computer; a row on top on narrow screens */
+.frame { display:grid; grid-template-columns:196px minmax(0, 1fr); align-items:start; }
+.frame.mini { grid-template-columns:56px minmax(0, 1fr); }
+.frame.nomenu { grid-template-columns:minmax(0, 1fr); }
+nav.side[hidden] { display:none !important; }
+nav.side { display:flex; flex-direction:column; gap:2px; padding:10px 6px; position:sticky; top:58px; max-height:calc(100vh - 58px); overflow-y:auto; background:var(--card); border-right:1px solid var(--line); min-height:calc(100vh - 58px); }
+nav.side button { display:flex; flex-wrap:wrap; align-items:center; column-gap:10px; row-gap:0; width:100%; text-align:left; border:0; background:none; padding:7px 9px; border-radius:8px; color:var(--muted); font:inherit; font-weight:600; cursor:pointer; white-space:nowrap; }
+nav.side button:hover { background:var(--soft); color:var(--ink); }
+nav.side button.on { background:var(--soft); color:var(--accent); }
+nav.side .ni { width:19px; height:19px; flex:none; }
+nav.side .nsub { flex-basis:100%; padding-left:29px; margin-top:-2px; font-size:11px; font-weight:400; color:var(--muted); }
+nav.side .pill { margin-left:auto; }
+.navgrp { font-size:10.5px; font-weight:700; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); padding:12px 10px 3px; }
+#navToggle { margin-top:10px; border-top:1px solid var(--line) !important; border-radius:0 !important; padding-top:10px !important; }
+.frame.mini nav.side .nl, .frame.mini nav.side .nsub, .frame.mini .navgrp span { display:none; }
+.frame.mini .navgrp { padding:0; height:0; border-top:1px solid var(--line); margin:8px 6px 6px; }
+.frame.mini nav.side button { justify-content:center; padding:9px 0; position:relative; }
+.frame.mini nav.side .pill { position:absolute; top:0; right:1px; font-size:10px; padding:0 4px; margin:0; background:var(--card); }
+.frame.mini #navToggle .ni { transform:rotate(180deg); }
+main { padding:16px; max-width:1200px; width:100%; margin:0 auto; min-width:0; }
+@media (max-width:900px) {
+  .frame, .frame.mini { grid-template-columns:minmax(0, 1fr); }
+  nav.side { flex-direction:row; flex-wrap:wrap; position:static; min-height:0; max-height:none; border-right:0; border-bottom:1px solid var(--line); padding:6px; }
+  nav.side button { width:auto; column-gap:6px; padding:6px 9px; }
+  .frame.mini nav.side .nl { display:inline; }
+  .navgrp, #navToggle, nav.side .nsub { display:none !important; }
+  .frame.mini nav.side button { padding:6px 9px; }
+}
 h1 { font-size:22px; margin:4px 0 12px; } h2 { font-size:18px; margin:22px 0 8px; } h3 { font-size:15px; margin:16px 0 6px; }
 .muted { color:var(--muted); } .small { font-size:12px; }
 .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px; margin:0 0 14px; }
@@ -65,7 +89,7 @@ svg.gantt { min-width:700px; }
 #tourPanel { position:fixed; right:16px; bottom:16px; width:min(380px, calc(100vw - 32px)); background:var(--card); border:2px solid var(--accent); border-radius:12px; padding:12px 14px; box-shadow:0 6px 24px rgba(0,0,0,.25); z-index:20; }
 .tourhl { outline:3px solid var(--c2) !important; outline-offset:3px; border-radius:6px; }
 @media (max-width:560px) { main { padding:10px; } .form { grid-template-columns:1fr; } header { padding:8px 10px; } #period { margin-left:0; } }
-@media print { header, nav, .noprint, .demo-band { display:none !important; } body { background:#fff; color:#000; } .card { border:0; padding:0; } .print-only { display:block; } main { max-width:none; } }
+@media print { .frame, .frame.mini { display:block; } header, nav, .noprint, .demo-band { display:none !important; } body { background:#fff; color:#000; } .card { border:0; padding:0; } .print-only { display:block; } main { max-width:none; } }
 </style>
 </head>
 <body>
@@ -79,8 +103,8 @@ svg.gantt { min-width:700px; }
     <select id="repYear" title="The year the dashboards and statements report on"></select>
   </div>
 </header>
-<nav id="tabs" hidden></nav>
-<main id="main"></main>
+<div class="frame nomenu" id="frame"><nav id="tabs" class="side" hidden aria-label="Menu"></nav>
+<main id="main"></main></div>
 <dialog id="dlg"><div id="dlgBody"></div></dialog>
 <script>
 /*__JS__*/

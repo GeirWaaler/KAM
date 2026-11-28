@@ -68,7 +68,7 @@ function devMailText(list) {
 
 /* ---------------------------------------------------------------- the onboarding tour (runs on the demo data) */
 const TOUR = [
-  { ch: "Finding your way", tab: "home", sel: "#tabs", title: "The pages", text: "The menu holds every page – one for each part of the old workbook, plus Updates, AppDev and Settings." },
+  { ch: "Finding your way", tab: "home", sel: "#tabs", title: "The menu", text: "The menu on the left holds every page, grouped: Money, Group, Reporting and Housekeeping. Narrow menu at the bottom shrinks it to icons." },
   { ch: "Finding your way", tab: "home", sel: "#period", title: "Reporting month", text: "Pick the month to report on. The dashboards, statements and targets all follow it." },
   { ch: "Finding your way", tab: "home", sel: ".kpis", title: "Key figures", text: "Every number is added up from the payments recorded – nothing is typed into a total." },
   { ch: "Finding your way", tab: "home", sel: "#followup", title: "Follow up", text: "What needs attention: members behind on savings, overdue loans, a missing fund statement, data problems. Fix one and it disappears." },

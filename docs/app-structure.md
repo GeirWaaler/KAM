@@ -9,6 +9,8 @@ The app never keeps its own copy of the data: it reads the folder when it opens 
 
 ## The pages
 
+The menu on the left groups the pages – the main pages first, then Money, Group, Reporting and Housekeeping. *Narrow menu* at its bottom shrinks it to icons; on a phone it is a row along the top.
+
 | Page | What it is for | Replaces in the workbook |
 | --- | --- | --- |
 | Home | The group dashboard: key figures, objectives, highlights, projects, 3 graphs, members against target | Group Dashboard |

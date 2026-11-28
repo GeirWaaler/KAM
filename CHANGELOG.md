@@ -1,5 +1,11 @@
 # What's new
 
+### KAM 1.2 – the menu on the left · 2026-11-28
+
+- **The menu is on the left**, with an icon for every page, grouped: Money, Group, Reporting, Housekeeping – like Horizons.
+- **Narrow menu** at the bottom of the menu shrinks it to icons only (hover an icon for its name); **Wide menu** brings the names back. Each computer remembers its choice.
+- On a phone or a narrow window the menu is a row along the top.
+
 ### KAM 1.1 – AppDev, the tour and Follow up · 2026-11-27
 
 - **Follow up** on Home: what needs attention – members behind on savings, membership fees not paid, missing email addresses, overdue loans and unrecorded loan interest, a missing fund statement, data problems, meetings without minutes, unsent AppDev comments, and the year-end in December. The count shows on the Home tab; each item has a **fix** link.

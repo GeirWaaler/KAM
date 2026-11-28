@@ -93,6 +93,7 @@ function wire() {
   const on = (sel, fn) => document.querySelectorAll(sel).forEach(el => el.addEventListener("click", e => { e.preventDefault(); fn(el); }));
   on("#tabs [data-tab]", el => go(el.dataset.tab, { loan: "", receiptsKind: "all" }));
   on("[data-go]", el => go(el.dataset.go));
+  on("#navToggle", () => { try { localStorage.setItem("kam-nav", navMini() ? "wide" : "mini"); } catch {} renderTabs(); wire(); });
   on("[data-tour]", () => guarded(startTour));
   on("[data-act]", el => { const [k, v] = el.dataset.act.split(/:(.*)/s); if (k === "member") go("member", { member: v }); else if (k === "loan") go("loans", { loan: v }); else if (k === "edit") { const n = findNote(v); if (n) openEditor(n.type, n); } else if (k === "new") newOf(v); else go(v); });
   if ($("appdevToggle")) $("appdevToggle").onclick = () => guarded(async () => { await saveNote(settingsNote(), { appdev: appdevOn() ? "off" : "on" }); refreshDb(); render(); status(`AppDev is ${appdevOn() ? "on" : "off"}.`); });
@@ -200,7 +201,7 @@ async function startDemo() {
   await scanStore(); view.year = 0; refreshDb(); view.tab = "home"; render();
 }
 function welcome(h) {
-  $("tabs").hidden = true; $("period").hidden = true;
+  $("tabs").hidden = true; $("frame").classList.add("nomenu"); $("period").hidden = true;
   $("main").innerHTML = `<div class="welcome"><div class="card"><h1>Welcome to KAM</h1>
   <p>KAM keeps the SACCO's records in a <b>data folder</b> on this computer. The folder usually comes from last year's admin, in the handover zip – unzip it first.</p>
   <div class="row">${h ? `<button class="primary" id="wReconnect" title="Give KAM access to ${esc(h.name)} again">Reconnect ${esc(h.name)}</button>` : ""}

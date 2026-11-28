@@ -11,8 +11,15 @@ const memberByCode = c => db.members.find(m => m.code === c);
 const mName = c => { const m = memberByCode(c); return m ? m.name : c || "–"; };
 const mLink = c => `[[${c}${memberByCode(c) ? " " + memberByCode(c).name : ""}]]`;
 const pillFor = r => `<span class="tag ${r === "On Track" || r === "Saved" || r === "Above" || r === "repaid" ? "ok" : r === "Watch" || r === "Partial" || r === "Stable" || r === "active" ? "warn" : "bad"}">${esc(r)}</span>`;
-const TABS = [["home", "Home"], ["members", "Members"], ["receipts", "Receipts"], ["interest", "Fund & interest"], ["loans", "Loans"], ["projects", "Projects"],
-  ["meetings", "Meetings"], ["expenses", "Expenses"], ["plans", "Plans"], ["yearend", "Year-end"], ["updates", "Updates"], ["appdev", "AppDev"], ["about", "About"], ["settings", "Settings"]];
+/* the menu: [id, name, group, short line under the name] – grouped as in Horizons */
+const TABS = [["home", "Home", ""], ["members", "Members", ""], ["receipts", "Receipts", "", "Every payment"],
+  ["interest", "Fund & interest", "Money", "How interest is shared"], ["loans", "Loans", "Money"], ["expenses", "Expenses", "Money"],
+  ["projects", "Projects", "Group"], ["meetings", "Meetings", "Group"], ["plans", "Plans", "Group"],
+  ["updates", "Updates", "Reporting", "Email and WhatsApp"], ["yearend", "Year-end", "Reporting", "Dividends, cash count"],
+  ["appdev", "AppDev", "Housekeeping", "For the developer"], ["settings", "Settings", "Housekeeping"], ["about", "About", "Housekeeping"]];
+const NAV_ICON = {"home": "<rect x=\"3.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13.5\" y=\"3.5\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"3.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.5\"/><rect x=\"13.5\" y=\"13.5\" width=\"7\" height=\"7\" rx=\"1.5\"/>", "members": "<circle cx=\"9\" cy=\"8\" r=\"3.5\"/><path d=\"M2.5 20c0-3.6 2.9-6 6.5-6s6.5 2.4 6.5 6\"/><path d=\"M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.3c2.2.7 3.5 2.8 3.5 5.7\"/>", "receipts": "<path d=\"M6 3h12v18l-3-2-3 2-3-2-3 2z\"/><path d=\"M9 8h6M9 12h6M9 16h3\"/>", "interest": "<path d=\"m3 17 6-6 4 4 8-8\"/><path d=\"M15 7h6v6\"/>", "loans": "<rect x=\"2.5\" y=\"6\" width=\"19\" height=\"12\" rx=\"2\"/><circle cx=\"12\" cy=\"12\" r=\"2.8\"/><path d=\"M6 9.5v5M18 9.5v5\"/>", "expenses": "<path d=\"M4 7h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h11\"/><path d=\"M16 13.5h.1\"/>", "projects": "<rect x=\"3.5\" y=\"6\" width=\"17\" height=\"13\" rx=\"2\"/><path d=\"M8.5 6V4.5h7V6M3.5 11.5h17\"/>", "meetings": "<path d=\"M4 5h12v8H9l-4 3v-3H4z\"/><path d=\"M16 9h4v8h-1v3l-4-3h-4v-2\"/>", "plans": "<path d=\"M14 3H6.5A1.5 1.5 0 0 0 5 4.5v15A1.5 1.5 0 0 0 6.5 21h11a1.5 1.5 0 0 0 1.5-1.5V8z\"/><path d=\"M14 3v5h5M8.5 13h7M8.5 17h5\"/>", "updates": "<rect x=\"3\" y=\"5.5\" width=\"18\" height=\"13\" rx=\"2\"/><path d=\"m3.5 7 8.5 6 8.5-6\"/>", "yearend": "<rect x=\"4\" y=\"5\" width=\"16\" height=\"15\" rx=\"2\"/><path d=\"M4 9.5h16M8.5 3v4M15.5 3v4\"/><path d=\"m9 15 2 2 4-4\"/>", "appdev": "<path d=\"m8 8-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14\"/>", "settings": "<circle cx=\"12\" cy=\"12\" r=\"3\"/><path d=\"M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.3 5.3l2.1 2.1M16.6 16.6l2.1 2.1M5.3 18.7l2.1-2.1M16.6 7.4l2.1-2.1\"/>", "about": "<circle cx=\"12\" cy=\"12\" r=\"8.5\"/><path d=\"M12 11v5.5M12 7.6v.1\"/>", "toggle": "<path d=\"m14.5 6-6 6 6 6\"/>"};
+const navIcon = id => `<svg class="ni" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${NAV_ICON[id] || ""}</svg>`;
+const navMini = () => { try { return localStorage.getItem("kam-nav") === "mini"; } catch { return false; } };
 const TAB_HELP = { home: "The group dashboard", members: "Members, contacts, statements and targets", receipts: "Every payment by member and month", interest: "The fund and how its interest is shared",
   loans: "Loans, repayments and the loan application", projects: "Objectives, projects and the project tracker", meetings: "Agenda, committee and meetings",
   expenses: "Funding sources and expenses", plans: "The SACCO's plans", yearend: "Dividends, share-out and the cash count", updates: "Email and WhatsApp updates to the members", appdev: "For the admin: the data model, how the app is built, and comments for the developer",
@@ -41,9 +48,13 @@ function fillPeriod() {
 
 /* ---------------------------------------------------------------- shell */
 function renderTabs() {
-  $("tabs").hidden = false;
-  const nf = followUps().length;
-  $("tabs").innerHTML = TABS.filter(([id]) => id !== "appdev" || appdevOn()).map(([id, label]) => `<button data-tab="${id}" class="${view.tab === id || (view.tab === "member" && id === "members") ? "on" : ""}" title="${esc(TAB_HELP[id])}">${label}${id === "home" && nf ? ` <span class="pill" title="Things to follow up">${nf}</span>` : ""}</button>`).join("");
+  $("tabs").hidden = false; $("frame").classList.remove("nomenu"); $("frame").classList.toggle("mini", navMini());
+  const nf = followUps().length; let grp = "";
+  $("tabs").innerHTML = TABS.filter(([id]) => id !== "appdev" || appdevOn()).map(([id, label, g, sub]) => {
+    const head = g && g !== grp ? `<div class="navgrp" title="${esc(g)}"><span>${esc(g)}</span></div>` : ""; grp = g;
+    const on = view.tab === id || (view.tab === "member" && id === "members") || (view.tab === "apply" && id === "loans");
+    return `${head}<button data-tab="${id}" class="${on ? "on" : ""}" ${on ? 'aria-current="page"' : ""} title="${esc(label)}: ${esc(TAB_HELP[id])}">${navIcon(id)}<span class="nl">${esc(label)}</span>${id === "home" && nf ? `<span class="pill" title="Things to follow up">${nf}</span>` : ""}${sub ? `<span class="nsub">${esc(sub)}</span>` : ""}</button>`;
+  }).join("") + `<button id="navToggle" title="Make the menu narrow (icons only) or wide again – remembered on this computer">${navIcon("toggle")}<span class="nl">${navMini() ? "Wide menu" : "Narrow menu"}</span></button>`;
 }
 function go(tab, extra = {}) { Object.assign(view, { tab }, extra); render(); window.scrollTo(0, 0); }
 function render() {

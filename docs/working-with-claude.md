@@ -66,6 +66,7 @@ Defaults are used until answered.
 - **KAM 1.0** (2026-11-27): everything the workbook does – Home (group dashboard, 3 graphs, member table), Members (contacts, STT statements, committee, 2 graphs, member pages), Receipts (ledger, receipt summary, fund rows, cash at hand, monthly round), Fund & interest (interest split, workbook vs recalculated), Loans (EXP LOAN, plan, printable application), Projects (objectives, projects, tracker timeline), Meetings, Expenses, Plans, Year-end (dividend and share-out, cash count), Updates (email and WhatsApp), Settings (data folder, checks, handover zip), About (analysis, waiting list, what's new), demo data.
 
 - **KAM 1.1** (2026-11-27): AppDev (data model, app structure, comments, Send to Geir, switch in Settings), the Getting started tour (4 chapters on demo data), Follow up on Home, the import report; the real workbook imported into `KAM-data.zip` (sent in the chat, never committed).
+- **KAM 1.2** (2026-11-28): the menu on the left with an icon per page, grouped (Money, Group, Reporting, Housekeeping), Narrow/Wide menu remembered per computer, a row on top on phones.
 
 ## Status
 
