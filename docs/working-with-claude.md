@@ -32,6 +32,7 @@
 ## Waiting to be built
 
 - **How amounts are shown** (agreed 2026-11-28, waiting) – a setting with four choices: numbers only (1,300,000), UGX 1,300,000, USh 1,300,000, or 1,300,000/=. Applies everywhere: pages, statements, printouts, the email and WhatsApp updates, the handover summary. With numbers only, one line "All amounts in UGX" under the page heading and at the end of the email. Stored in the data folder's settings; default numbers only. (The shilling has no symbol of its own – USh is the abbreviation, and prices are written like 5,000/=.)
+- **Short names on chart axes** (agreed 2026-11-28, waiting) – charts that list members show a short name instead of the code: a `short_name` property on each member, filled with the first word of the name and correctable under Members › Edit (some names are written surname first); the surname's first letter is added when two short names match; hovering shows the full name and code. Applies to every chart that lists members.
 
 **Ideas discussed, not yet agreed** (2026-11-27)
 
